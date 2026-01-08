@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto System - GCMN (Crachá Download)</title>
+    <title>Ponto System - GCMN (Crachá Compacto)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -68,7 +68,7 @@
         #videoCapture { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .image-modal-content { max-width: 95%; max-height: 90vh; border: 3px solid white; border-radius: 8px; }
 
-        /* --- ESTILOS DO CRACHÁ (PERSONALIZADO #d37d18) --- */
+        /* --- ESTILOS DO CRACHÁ (COMPACTO E LARANJA) --- */
         .id-card-container {
             width: 300px; height: 500px;
             background: #fff;
@@ -76,22 +76,23 @@
             border-radius: 8px;
             margin: 0 auto;
             display: flex; flex-direction: column; align-items: center;
-            padding: 20px;
+            padding: 15px; /* Reduzi padding */
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            position: relative; /* Necessário para o html2canvas capturar bem */
+            position: relative;
         }
         .id-card-header {
             width: 100%;
-            border-bottom: 3px solid #d37d18; /* Cor Personalizada */
+            border-bottom: 3px solid #d37d18;
             text-align: center;
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            padding-bottom: 5px; /* Reduzi padding */
+            margin-bottom: 10px; /* Reduzi margem */
         }
         .id-card-header h3 {
-            color: #d37d18; /* Cor Personalizada */
+            color: #d37d18;
             font-weight: 900;
             margin: 0;
             font-size: 2rem;
+            line-height: 1;
         }
         .id-card-body {
             flex-grow: 1;
@@ -99,31 +100,38 @@
             width: 100%;
         }
         .id-card-photo {
-            width: 140px; height: 140px; /* Levemente maior para compensar o QR menor */
+            width: 125px; height: 125px; /* Reduzi levemente */
             border-radius: 50%;
             object-fit: cover;
-            border: 5px solid #d37d18; /* Cor Personalizada */
-            margin-bottom: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            border: 4px solid #d37d18;
+            margin-bottom: 8px; /* Reduzi margem */
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
         }
         .id-card-name {
-            font-size: 1.4rem; font-weight: 800; text-align: center; line-height: 1.1; margin: 5px 0; color: #333;
+            font-size: 1.4rem; font-weight: 800; text-align: center; line-height: 1.1; 
+            margin: 0 0 4px 0; color: #333;
         }
         .id-card-role {
-            color: #d37d18; /* Cor Personalizada */
-            font-weight: 700; text-transform: uppercase; margin-bottom: 15px; font-size: 1rem;
+            color: #d37d18;
+            font-weight: 700; text-transform: uppercase; margin-bottom: 8px; font-size: 0.95rem;
         }
         .id-card-info {
-            background: #f8f9fa; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; color: #555; margin-bottom: 15px;
+            background: #fff3e0; /* Fundo laranja bem claro */
+            padding: 4px 15px; border-radius: 20px; 
+            font-size: 0.85rem; color: #555; 
+            margin-bottom: 10px;
+            border: 1px solid #ffe0b2;
         }
         .id-card-footer {
             margin-top: auto;
             display: flex; justify-content: center; width: 100%;
+            padding-top: 5px;
         }
         #card-qr {
             border: 2px solid #eee;
-            padding: 5px;
+            padding: 3px; /* Padding fino */
             border-radius: 8px;
+            background: white;
         }
 
         /* PRINT */
@@ -714,14 +722,12 @@
                 document.getElementById('card-matricula').innerText = c.matricula;
                 document.getElementById('card-foto').src = c.fotoPerfil || "";
                 document.getElementById('card-qr').innerHTML = "";
-                new QRCode(document.getElementById('card-qr'), { text: `${c.id},${c.nome}`, width: 120, height: 120 });
+                new QRCode(document.getElementById('card-qr'), { text: `${c.id},${c.nome}`, width: 125, height: 125 }); // 125px QR
                 document.getElementById('cracha-preview-area').classList.remove('hidden');
             },
             
-            // --- NOVA FUNÇÃO: DOWNLOAD DE IMAGEM ---
             downloadCracha: async () => {
                 const element = document.querySelector(".id-card-container");
-                // Garante que o fundo seja branco e renderiza em alta escala (3x)
                 html2canvas(element, { backgroundColor: "#ffffff", scale: 3, useCORS: true }).then(canvas => {
                     const link = document.createElement('a');
                     link.download = 'cracha_gcmn.png';
