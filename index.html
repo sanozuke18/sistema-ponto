@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto System - GCMN (Layout Central)</title>
+    <title>Ponto System - GCMN (Mira Centralizada)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -20,9 +20,8 @@
         .test-mode-banner { background-color: #ffc107; color: #000; text-align: center; font-weight: bold; padding: 5px; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; }
         body.testing-mode { padding-top: 35px; }
 
-        /* --- NOVO LAYOUT DA HOME --- */
+        /* --- LAYOUT DA HOME --- */
         
-        /* Relógio mais compacto */
         .clock-widget { 
             background: white; padding: 10px; border-radius: 12px; margin-bottom: 15px; 
             text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); 
@@ -39,7 +38,7 @@
             border: 4px solid #fff;
             position: relative; 
             width: 100%;
-            height: 320px; /* Altura fixa para não empurrar a tela */
+            height: 320px;
             display: flex; 
             align-items: center; 
             justify-content: center;
@@ -48,16 +47,27 @@
         #qr-reader { width: 100%; height: 100%; border: none !important; }
         #qr-reader video { object-fit: cover; width: 100%; height: 100%; }
         
+        /* --- CORREÇÃO DA MIRA CENTRALIZADA --- */
         .scanner-overlay {
-            position: absolute; bottom: 15px; left: 0; width: 100%;
-            text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.9);
-            font-size: 1.1rem; font-weight: bold; pointer-events: none; z-index: 10;
-            background: rgba(0,0,0,0.3); padding: 5px 0;
+            position: absolute;
+            top: 50%; /* Move para o meio vertical */
+            left: 0;
+            width: 100%;
+            transform: translateY(-50%); /* Ajusta para o centro exato */
+            text-align: center;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            font-size: 1.2rem;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 10;
+            background: rgba(0,0,0,0.5); /* Fundo um pouco mais escuro para destaque no centro */
+            padding: 15px 0; /* Mais padding para destacar */
         }
 
         /* Botões Compactos (Grid 2x2) */
         .btn-tablet {
-            height: 70px; /* Menor altura */
+            height: 70px;
             font-size: 1.1rem; 
             font-weight: 700; 
             width: 100%;
@@ -66,13 +76,12 @@
             align-items: center; 
             justify-content: center;
             transition: all 0.2s; 
-            opacity: 0.7; /* Mais apagado inativo */
+            opacity: 0.7;
             border: 2px solid transparent;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .btn-tablet:hover { opacity: 0.9; transform: translateY(-2px); }
         
-        /* Efeito Selecionado */
         .btn-tablet.selected { 
             opacity: 1; 
             box-shadow: 0 0 15px rgba(13, 110, 253, 0.5); 
@@ -651,7 +660,7 @@
                     let status = '<span class="text-success">Ativo</span>';
                     if(c.feriasInicio && c.feriasFim && hoje <= c.feriasFim) status = '<span class="text-danger fw-bold">Em Férias</span>';
                     tbody.innerHTML += `<tr><td>${c.fotoPerfil?'<img src="'+c.fotoPerfil+'" class="profile-thumb-small">':'?'}</td><td>${c.id}</td><td>${c.nome}<br><small>${c.cargo}</small></td><td>${status}</td><td><button class="btn btn-sm btn-primary" onclick="window.adminController.editar(${json})">✏️</button> <button class="btn btn-sm btn-danger" onclick="window.adminController.deletar('${c.docId}')">🗑️</button></td></tr>`;
-                    sel.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+                    sel.innerHTML += `<option value="${c.id}">${c.nome} (ID: ${c.id})</option>`;
                 });
             },
             editar: (d) => {
