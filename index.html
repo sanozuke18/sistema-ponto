@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto System - Câmera Always On</title>
+    <title>Ponto System - GCMN (Auto Close)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -18,58 +18,38 @@
         .test-mode-banner { background-color: #ffc107; color: #000; text-align: center; font-weight: bold; padding: 5px; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; }
         body.testing-mode { padding-top: 35px; }
 
-        /* --- MODIFICAÇÃO: CÂMERA ESPELHO NA HOME --- */
-        .home-mirror-container {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto 20px auto;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            background: #000;
-            position: relative;
-            aspect-ratio: 4/3; /* Mantém proporção */
-        }
-        #videoHome { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: cover; 
-            transform: scaleX(-1); /* Efeito Espelho */
-            opacity: 0.8; /* Leve transparência para estilo */
-        }
-        .mirror-overlay {
-            position: absolute; bottom: 10px; left: 0; width: 100%;
-            text-align: center; color: white; font-weight: bold;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
-            pointer-events: none;
-        }
-
-        /* Câmera Registro */
+        /* UI Elements */
         .camera-container { position: relative; width: 100%; max-width: 600px; margin: auto; overflow: hidden; border-radius: 12px; background: #000; }
         #videoElement { width: 100%; transform: scaleX(-1); }
-        
-        /* Botões Tablet */
-        .btn-tablet { height: 100px; font-size: 1.2rem; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s; }
+        .btn-tablet { height: 120px; font-size: 1.4rem; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s; }
         .btn-tablet:active { transform: scale(0.98); }
+        .clock-container { margin-bottom: 30px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid #0d6efd; }
+        .clock-time { font-size: 4rem; font-weight: 800; color: #212529; line-height: 1; letter-spacing: -2px; }
         
-        /* Relógio */
-        .clock-container { margin-bottom: 20px; padding: 15px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid #0d6efd; }
-        .clock-time { font-size: 3rem; font-weight: 800; color: #212529; line-height: 1; letter-spacing: -2px; }
-        
-        /* Thumbnails */
+        /* FOTOS E MINIATURAS */
+        .profile-thumb-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .evidence-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 2px solid #dee2e6; cursor: pointer; transition: transform 0.2s; display: block; margin: 0 auto 4px auto; }
         .evidence-thumb:hover { transform: scale(1.5); border-color: #0d6efd; z-index: 10; position: relative; }
         .registro-item { display: inline-block; margin-right: 8px; text-align: center; vertical-align: top; }
-        .profile-thumb-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 
-        /* Saldo e Loading */
+        /* Saldo */
         .balance-positive { color: green; font-weight: bold; }
         .balance-negative { color: red; font-weight: bold; }
-        .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction: column; }
         
-        /* Crachá e Modal */
+        /* Loading & Success Overlay */
+        .loading-overlay { 
+            position: fixed; top:0; left:0; width:100%; height:100%; 
+            background:rgba(255,255,255,0.98); z-index:9999; 
+            display:flex; justify-content:center; align-items:center; flex-direction: column;
+        }
+        .success-icon { font-size: 6rem; color: #198754; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); margin-bottom: 20px; }
+        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        /* Modal Foto Full */
         .image-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; justify-content: center; align-items: center; }
         .image-modal-content { max-width: 95%; max-height: 90vh; border: 3px solid white; border-radius: 8px; }
+
+        /* Crachá Impressão */
         .id-card-container { width: 300px; height: 500px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .id-card-header { width: 100%; border-bottom: 2px solid #0d6efd; text-align: center; padding-bottom: 10px; margin-bottom: 20px; }
         .id-card-photo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #0d6efd; margin-bottom: 15px; }
@@ -92,8 +72,11 @@
     <div id="test-banner" class="test-mode-banner hidden">⚠️ MODO DE TESTE ATIVADO</div>
 
     <div id="status-overlay" class="loading-overlay hidden">
-        <div class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;"></div>
-        <h2 id="status-text" class="text-muted">Carregando...</h2>
+        <div id="status-spinner" class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;"></div>
+        
+        <div id="status-icon" class="success-icon hidden">✅</div>
+        
+        <h2 id="status-text" class="text-muted fw-bold">Carregando...</h2>
     </div>
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 px-3 shadow no-print">
@@ -111,7 +94,6 @@
         <div id="view-home" class="view-section">
             <div class="row justify-content-center">
                 <div class="col-lg-10">
-                    
                     <div class="row">
                         <div class="col-md-7">
                             <div class="clock-container text-center">
@@ -120,23 +102,18 @@
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-6"><button class="btn btn-success w-100 btn-tablet" onclick="window.pontoController.selecionarTipo('ENTRADA_TRABALHO')">🟢 ENTRADA</button></div>
-                                <div class="col-md-6"><button class="btn btn-warning w-100 btn-tablet text-dark" onclick="window.pontoController.selecionarTipo('SAIDA_ALMOCO')">🍽️ SAÍDA ALMOÇO</button></div>
-                                <div class="col-md-6"><button class="btn btn-info w-100 btn-tablet text-white" onclick="window.pontoController.selecionarTipo('RETORNO_ALMOCO')">🔙 VOLTA ALMOÇO</button></div>
+                                <div class="col-md-6"><button class="btn btn-warning w-100 btn-tablet text-dark" onclick="window.pontoController.selecionarTipo('SAIDA_ALMOCO')">🍽️ ALMOÇO (IDA)</button></div>
+                                <div class="col-md-6"><button class="btn btn-info w-100 btn-tablet text-white" onclick="window.pontoController.selecionarTipo('RETORNO_ALMOCO')">🔙 ALMOÇO (VOLTA)</button></div>
                                 <div class="col-md-6"><button class="btn btn-danger w-100 btn-tablet" onclick="window.pontoController.selecionarTipo('SAIDA_TRABALHO')">🔴 SAÍDA</button></div>
                             </div>
                         </div>
-
                         <div class="col-md-5 d-flex align-items-center">
-                            <div class="home-mirror-container">
-                                <video id="videoHome" autoplay playsinline muted></video>
-                                <div class="mirror-overlay">
-                                    <span>Sistema Pronto</span><br>
-                                    <small>Aproxime-se</small>
-                                </div>
+                            <div style="width:100%; height:400px; background:#000; border-radius:15px; overflow:hidden; position:relative; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+                                <video id="videoHome" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:0.8;"></video>
+                                <div style="position:absolute; bottom:10px; width:100%; text-align:center; color:white; font-weight:bold; text-shadow:0 2px 4px rgba(0,0,0,0.8);">Sistema Pronto</div>
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -145,15 +122,13 @@
             <div class="row justify-content-center">
                 <div class="col-md-8 text-center">
                     <div class="card shadow border-0">
-                        <div class="card-header bg-primary text-white py-3"><h4 class="m-0">Registrando Ponto</h4></div>
+                        <div class="card-header bg-primary text-white py-3"><h4 class="m-0">Registrando...</h4></div>
                         <div class="card-body p-4">
-                            
                             <div id="step-qr">
-                                <p class="lead fw-bold">Aproxime seu Crachá (QR Code)</p>
-                                <div id="qr-reader" class="mb-3 rounded border overflow-hidden"></div>
-                                <button class="btn btn-secondary px-5" onclick="window.pontoController.cancelar()">Cancelar / Voltar</button>
+                                <p class="lead">Aproxime o Crachá</p>
+                                <div id="qr-reader" class="mb-3 rounded border"></div>
+                                <button class="btn btn-secondary" onclick="window.pontoController.cancelar()">Cancelar</button>
                             </div>
-
                             <div id="step-foto" class="hidden">
                                 <h5 id="msg-ola" class="text-success fw-bold mb-3">Olá!</h5>
                                 <div class="camera-container">
@@ -161,9 +136,8 @@
                                     <canvas id="canvasElement" class="hidden"></canvas>
                                     <div id="countdown-display" class="position-absolute top-50 start-50 translate-middle text-white fw-bold" style="font-size: 5rem; text-shadow: 0 0 10px rgba(0,0,0,0.8);">3</div>
                                 </div>
-                                <p class="text-muted mt-2 fw-bold">Sorria! Capturando em 3 segundos...</p>
+                                <p class="text-muted mt-2">Foto em 3s...</p>
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -345,8 +319,31 @@
             minToTime: (m) => { const s=m<0?"-":""; m=Math.abs(m); return `${s}${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; },
             timeToMin: (t) => { const[h,m]=t.split(':').map(Number); return (h*60)+m; }
         };
+        
+        // --- UI REFORMULADA PARA SUCESSO AUTOMÁTICO ---
         const ui = {
-            loading: (show) => document.getElementById('status-overlay').classList.toggle('hidden', !show),
+            reset: () => {
+                document.getElementById('status-spinner').classList.add('hidden');
+                document.getElementById('status-icon').classList.add('hidden');
+                document.getElementById('status-text').innerText = '';
+            },
+            loading: (show, text="Processando...") => {
+                const overlay = document.getElementById('status-overlay');
+                if(show) {
+                    ui.reset();
+                    document.getElementById('status-spinner').classList.remove('hidden');
+                    document.getElementById('status-text').innerText = text;
+                    overlay.classList.remove('hidden');
+                } else {
+                    overlay.classList.add('hidden');
+                }
+            },
+            success: (text) => {
+                ui.reset();
+                document.getElementById('status-overlay').classList.remove('hidden');
+                document.getElementById('status-icon').classList.remove('hidden');
+                document.getElementById('status-text').innerText = text;
+            },
             compressImage: (file) => new Promise((resolve) => {
                 const r = new FileReader(); r.readAsDataURL(file);
                 r.onload = (e) => { const i=new Image(); i.src=e.target.result; i.onload=()=>{ const c=document.createElement('canvas'); const x=c.getContext('2d'); const s=300/i.width; c.width=300; c.height=i.height*s; x.drawImage(i,0,0,c.width,c.height); resolve(c.toDataURL('image/jpeg',0.7)); } }
@@ -426,7 +423,7 @@
             onScan: async (t) => {
                 window.pontoController.scanner.clear(); window.pontoController.scanner = null; document.getElementById('qr-reader').innerHTML = "";
                 let id = t.includes(',') ? t.split(',')[0] : t; id = id.trim();
-                ui.loading(true);
+                ui.loading(true, "Buscando...");
                 const s = await window.db.buscarPorId(id);
                 if(s.empty) { ui.loading(false); alert("ID não encontrado"); window.app.navegar('home'); return; }
                 const dup = await window.db.verificarDuplicidade(id, new Date().toLocaleDateString('pt-BR'), window.pontoController.tipoSelecionado);
@@ -452,13 +449,14 @@
                 } catch(e) { alert("Câmera erro"); }
             },
             salvar: async () => {
-                ui.loading(true);
+                ui.loading(true, "Salvando...");
                 const vid = document.getElementById('videoElement'); const cvs = document.getElementById('canvasElement');
                 cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
                 cvs.getContext('2d').drawImage(vid, 0, 0);
                 const foto = cvs.toDataURL('image/jpeg', 0.5);
                 vid.srcObject.getTracks().forEach(t => t.stop());
                 const now = new Date();
+                
                 await window.db.registrarPonto({
                     id: window.pontoController.dadosFuncionario.id,
                     nome: window.pontoController.dadosFuncionario.nome,
@@ -469,7 +467,13 @@
                     dataStr: now.toLocaleDateString('pt-BR'),
                     horaStr: now.toLocaleTimeString('pt-BR')
                 });
-                ui.loading(false); alert("Registrado!"); window.app.navegar('home');
+
+                // SUCESSO AUTOMÁTICO
+                ui.success("Ponto Registrado!");
+                setTimeout(() => {
+                    ui.loading(false); // Esconde tudo
+                    window.app.navegar('home');
+                }, 2500);
             }
         };
 
@@ -666,11 +670,7 @@
             navegar: (v) => { 
                 document.querySelectorAll('.view-section').forEach(e=>e.classList.add('hidden')); 
                 document.getElementById('view-'+v).classList.remove('hidden'); 
-                
-                // LÓGICA DE CÂMERA ESPELHO
-                if(v === 'home') window.cameraManager.startHome();
-                else window.cameraManager.stop();
-
+                if(v === 'home') window.cameraManager.startHome(); else window.cameraManager.stop();
                 if(v==='admin') window.adminController.carregarLista(); 
             },
             verificarAdmin: () => sessionStorage.getItem('admin_logado') ? window.app.navegar('admin') : window.app.navegar('login'),
@@ -678,7 +678,6 @@
             isTestMode: () => localStorage.getItem('tm') === 'true'
         };
 
-        // Init
         document.getElementById('toggleTestMode').checked = window.app.isTestMode();
         if(window.app.isTestMode()) { document.getElementById('test-banner').classList.remove('hidden'); document.body.classList.add('testing-mode'); }
         setInterval(() => { const d = new Date(); document.getElementById('clock-time').innerText = d.toLocaleTimeString('pt-BR'); document.getElementById('clock-date').innerText = d.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'}); }, 1000);
