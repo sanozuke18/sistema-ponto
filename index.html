@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto System - GCMN (Controle de Férias Automático)</title>
+    <title>Ponto System - GCMN (Home Scanner)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -11,61 +11,106 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <style>
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        body { background-color: #eef2f6; font-family: 'Segoe UI', sans-serif; user-select: none; }
         .hidden { display: none !important; }
         
-        /* BANNER TESTE */
+        /* LAYOUT DA HOME */
+        .home-grid { display: flex; height: 85vh; gap: 20px; align-items: stretch; }
+        .left-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .right-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+        /* SCANNER CONTAINER */
+        .scanner-wrapper {
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 5px solid #fff;
+            position: relative;
+            height: 100%;
+            max-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #qr-reader { width: 100%; height: 100%; border: none !important; }
+        #qr-reader video { object-fit: cover; width: 100%; height: 100%; }
+        
+        /* BOTÕES */
+        .btn-tablet {
+            height: 100px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding-left: 30px;
+            position: relative;
+            transition: all 0.2s;
+            opacity: 0.6; /* Apagado por padrão */
+            border: 2px solid transparent;
+        }
+        .btn-tablet:hover { opacity: 0.8; transform: translateY(-2px); }
+        .btn-tablet i { font-size: 1.8rem; margin-right: 15px; }
+        
+        /* Efeito de Seleção */
+        .btn-tablet.selected {
+            opacity: 1;
+            box-shadow: 0 0 15px rgba(13, 110, 253, 0.5);
+            border-color: #0d6efd;
+            transform: scale(1.02);
+            animation: pulse-border 1.5s infinite;
+        }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); } 100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); } }
+
+        /* RELÓGIO */
+        .clock-widget { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .clock-time { font-size: 3.5rem; font-weight: 800; line-height: 1; color: #333; }
+        .clock-date { font-size: 1.1rem; color: #777; text-transform: capitalize; }
+
+        /* STATUS MESSAGE NO SCANNER */
+        .scanner-overlay {
+            position: absolute; bottom: 20px; left: 0; width: 100%;
+            text-align: center; color: white; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            font-size: 1.2rem; font-weight: bold;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* MODAL DE FOTO (CAPTURE) */
+        .photo-capture-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .capture-video-container {
+            width: 400px; height: 400px; border-radius: 50%; overflow: hidden;
+            border: 5px solid #fff; position: relative; box-shadow: 0 0 30px rgba(255,255,255,0.2);
+        }
+        #videoCapture { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        
+        /* UTILS */
+        .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction: column; }
         .test-mode-banner { background-color: #ffc107; color: #000; text-align: center; font-weight: bold; padding: 5px; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; }
         body.testing-mode { padding-top: 35px; }
-
-        /* UI Elements */
-        .camera-container { position: relative; width: 100%; max-width: 600px; margin: auto; overflow: hidden; border-radius: 12px; background: #000; }
-        #videoElement { width: 100%; transform: scaleX(-1); }
-        .btn-tablet { height: 120px; font-size: 1.4rem; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s; }
-        .btn-tablet:active { transform: scale(0.98); }
-        .clock-container { margin-bottom: 30px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid #0d6efd; }
-        .clock-time { font-size: 4rem; font-weight: 800; color: #212529; line-height: 1; letter-spacing: -2px; }
         
-        /* FOTOS E MINIATURAS */
-        .profile-thumb-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        .evidence-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 2px solid #dee2e6; cursor: pointer; transition: transform 0.2s; display: block; margin: 0 auto 4px auto; }
-        .evidence-thumb:hover { transform: scale(1.5); border-color: #0d6efd; z-index: 10; position: relative; }
-        .registro-item { display: inline-block; margin-right: 8px; text-align: center; vertical-align: top; }
-
-        /* Saldo */
-        .balance-positive { color: green; font-weight: bold; }
-        .balance-negative { color: red; font-weight: bold; }
-        
-        /* Loading & Success Overlay */
-        .loading-overlay { 
-            position: fixed; top:0; left:0; width:100%; height:100%; 
-            background:rgba(255,255,255,0.98); z-index:9999; 
-            display:flex; justify-content:center; align-items:center; flex-direction: column;
+        /* IMPRESSÃO */
+        @media print {
+            body * { visibility: hidden; }
+            .test-mode-banner, .modal, .loading-overlay { display: none !important; }
+            #printable-area, #printable-area * { visibility: visible; }
+            #printable-area { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; }
+            .id-card-container { width: 60mm !important; height: 100mm !important; border: none !important; padding: 5mm !important; justify-content: space-between !important; }
         }
-        .success-icon { font-size: 6rem; color: #198754; animation: popIn 0.5s; margin-bottom: 20px; }
-        .error-icon { font-size: 6rem; color: #dc3545; animation: popIn 0.5s; margin-bottom: 20px; }
-        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        /* Modal Foto Full */
-        .image-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; justify-content: center; align-items: center; }
-        .image-modal-content { max-width: 95%; max-height: 90vh; border: 3px solid white; border-radius: 8px; }
-
-        /* Crachá Impressão */
+        /* Estilos do Crachá (Tela) */
         .id-card-container { width: 300px; height: 500px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .id-card-header { width: 100%; border-bottom: 2px solid #0d6efd; text-align: center; padding-bottom: 10px; margin-bottom: 20px; }
         .id-card-photo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #0d6efd; margin-bottom: 15px; }
         .id-card-name { font-size: 1.4rem; font-weight: 800; text-align: center; line-height: 1.2; }
         .id-card-role { color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 15px; }
-
-        @media print {
-            @page { size: auto; margin: 0mm; }
-            body * { visibility: hidden; }
-            .test-mode-banner, .modal { display: none !important; }
-            #printable-area, #printable-area * { visibility: visible; }
-            #printable-area { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; }
-            .id-card-container { width: 60mm !important; height: 100mm !important; border: none !important; padding: 5mm !important; justify-content: space-between !important; }
-            .no-print { display: none !important; }
-        }
     </style>
 </head>
 <body>
@@ -73,14 +118,14 @@
     <div id="test-banner" class="test-mode-banner hidden">⚠️ MODO DE TESTE ATIVADO</div>
 
     <div id="status-overlay" class="loading-overlay hidden">
-        <div id="status-spinner" class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;"></div>
-        <div id="status-icon" class="success-icon hidden">✅</div>
-        <div id="error-icon" class="error-icon hidden">🚫</div>
+        <div id="status-spinner" class="spinner-border text-primary mb-3" style="width: 4rem; height: 4rem;"></div>
+        <div id="status-icon" class="hidden" style="font-size: 5rem;">✅</div>
+        <div id="error-icon" class="hidden" style="font-size: 5rem;">🚫</div>
         <h2 id="status-text" class="text-muted fw-bold">Carregando...</h2>
         <p id="status-subtext" class="text-danger fw-bold mt-2 fs-5"></p>
     </div>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 px-3 shadow no-print">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3 px-3 shadow no-print">
         <div class="container-fluid">
             <span class="navbar-brand fw-bold">☁️ Ponto System GCMN</span>
             <div class="d-flex">
@@ -90,67 +135,61 @@
         </div>
     </nav>
 
-    <div class="container no-print">
+    <div class="container-fluid px-4 no-print">
         
         <div id="view-home" class="view-section">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="row">
-                        <div class="col-md-7">
-                            <div class="clock-container text-center">
-                                <div id="clock-time" class="clock-time">00:00:00</div>
-                                <div id="clock-date" class="clock-date">--</div>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-md-6"><button class="btn btn-success w-100 btn-tablet" onclick="window.pontoController.selecionarTipo('ENTRADA_TRABALHO')">🟢 ENTRADA</button></div>
-                                <div class="col-md-6"><button class="btn btn-warning w-100 btn-tablet text-dark" onclick="window.pontoController.selecionarTipo('SAIDA_ALMOCO')">🍽️ ALMOÇO (IDA)</button></div>
-                                <div class="col-md-6"><button class="btn btn-info w-100 btn-tablet text-white" onclick="window.pontoController.selecionarTipo('RETORNO_ALMOCO')">🔙 ALMOÇO (VOLTA)</button></div>
-                                <div class="col-md-6"><button class="btn btn-danger w-100 btn-tablet" onclick="window.pontoController.selecionarTipo('SAIDA_TRABALHO')">🔴 SAÍDA</button></div>
-                            </div>
-                        </div>
-                        <div class="col-md-5 d-flex align-items-center">
-                            <div style="width:100%; height:400px; background:#000; border-radius:15px; overflow:hidden; position:relative; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-                                <video id="videoHome" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:0.8;"></video>
-                                <div style="position:absolute; bottom:10px; width:100%; text-align:center; color:white; font-weight:bold; text-shadow:0 2px 4px rgba(0,0,0,0.8);">Sistema Pronto</div>
-                            </div>
+            
+            <div class="home-grid">
+                
+                <div class="left-panel">
+                    <div class="clock-widget">
+                        <div id="clock-time" class="clock-time">00:00</div>
+                        <div id="clock-date" class="clock-date">--</div>
+                    </div>
+
+                    <div class="d-flex flex-column">
+                        <button class="btn btn-success btn-tablet" id="btn-entrada" onclick="window.pontoController.selecionar('ENTRADA_TRABALHO', this)">
+                            <span>🟢 ENTRADA</span>
+                        </button>
+                        <button class="btn btn-warning text-dark btn-tablet" id="btn-almoco-ida" onclick="window.pontoController.selecionar('SAIDA_ALMOCO', this)">
+                            <span>🍽️ SAÍDA ALMOÇO</span>
+                        </button>
+                        <button class="btn btn-info text-white btn-tablet" id="btn-almoco-volta" onclick="window.pontoController.selecionar('RETORNO_ALMOCO', this)">
+                            <span>🔙 VOLTA ALMOÇO</span>
+                        </button>
+                        <button class="btn btn-danger btn-tablet" id="btn-saida" onclick="window.pontoController.selecionar('SAIDA_TRABALHO', this)">
+                            <span>🔴 SAÍDA</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="right-panel">
+                    <div class="scanner-wrapper">
+                        <div id="qr-reader"></div>
+                        <div class="scanner-overlay" id="scanner-status">
+                            &larr; Selecione uma opção ao lado
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
 
-        <div id="view-registro" class="view-section hidden">
-            <div class="row justify-content-center">
-                <div class="col-md-8 text-center">
-                    <div class="card shadow border-0">
-                        <div class="card-header bg-primary text-white py-3"><h4 class="m-0">Registrando...</h4></div>
-                        <div class="card-body p-4">
-                            <div id="step-qr">
-                                <p class="lead">Aproxime o Crachá</p>
-                                <div id="qr-reader" class="mb-3 rounded border"></div>
-                                <button class="btn btn-secondary" onclick="window.pontoController.cancelar()">Cancelar</button>
-                            </div>
-                            <div id="step-foto" class="hidden">
-                                <h5 id="msg-ola" class="text-success fw-bold mb-3">Olá!</h5>
-                                <div class="camera-container">
-                                    <video id="videoElement" autoplay playsinline></video>
-                                    <canvas id="canvasElement" class="hidden"></canvas>
-                                    <div id="countdown-display" class="position-absolute top-50 start-50 translate-middle text-white fw-bold" style="font-size: 5rem; text-shadow: 0 0 10px rgba(0,0,0,0.8);">3</div>
-                                </div>
-                                <p class="text-muted mt-2">Foto em 3s...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <div id="capture-modal" class="photo-capture-modal hidden">
+            <h2 class="text-white fw-bold mb-4" id="capture-msg">Olá, Colaborador!</h2>
+            <div class="capture-video-container">
+                <video id="videoCapture" autoplay playsinline></video>
             </div>
+            <h1 class="text-white fw-bold mt-4" style="font-size: 4rem;" id="capture-countdown">3</h1>
+            <p class="text-white opacity-75">Tirando foto de comprovação...</p>
+            <canvas id="canvasCapture" class="hidden"></canvas>
         </div>
 
         <div id="view-login" class="view-section hidden">
-            <div class="row justify-content-center"><div class="col-md-4"><div class="card shadow p-4 mt-5">
+            <div class="row justify-content-center mt-5"><div class="col-md-4"><div class="card shadow p-4">
                 <h4 class="text-center mb-4">Acesso RH</h4>
                 <input type="password" id="adminPass" class="form-control mb-3" placeholder="Senha (admin123)">
                 <button class="btn btn-dark w-100" onclick="window.adminController.login()">Entrar</button>
-                <button class="btn btn-link w-100 mt-2" onclick="window.app.navegar('home')">Voltar ao Tablet</button>
             </div></div></div>
         </div>
 
@@ -163,7 +202,7 @@
                 </div>
             </div>
 
-            <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
+            <ul class="nav nav-tabs mb-4">
                 <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pane-funcionarios">👥 Cadastro</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-folha" onclick="window.folhaController.carregarSelect()">📅 Folha de Ponto</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-cracha">🆔 Crachás</button></li>
@@ -181,153 +220,50 @@
                                     <div class="col-md-2"><label class="small">Matrícula</label><input type="text" id="cadMatricula" class="form-control" required></div>
                                     <div class="col-md-4"><label class="small">Nome</label><input type="text" id="cadNome" class="form-control" required></div>
                                     <div class="col-md-4"><label class="small">Cargo</label><input type="text" id="cadCargo" class="form-control" required></div>
-                                    
                                     <div class="col-12"><h6 class="border-bottom pb-2 mt-2">Configuração de Escala</h6></div>
                                     <div class="col-md-3"><label class="small">Horas/Dia</label><input type="number" id="escalaHoras" class="form-control" value="8" min="1"></div>
-                                    <div class="col-md-9">
-                                        <label class="small d-block">Dias Trabalhados</label>
-                                        <div class="btn-group" role="group">
-                                            <input type="checkbox" class="btn-check" id="dia_1" value="1" checked><label class="btn btn-outline-secondary btn-sm" for="dia_1">Seg</label>
-                                            <input type="checkbox" class="btn-check" id="dia_2" value="2" checked><label class="btn btn-outline-secondary btn-sm" for="dia_2">Ter</label>
-                                            <input type="checkbox" class="btn-check" id="dia_3" value="3" checked><label class="btn btn-outline-secondary btn-sm" for="dia_3">Qua</label>
-                                            <input type="checkbox" class="btn-check" id="dia_4" value="4" checked><label class="btn btn-outline-secondary btn-sm" for="dia_4">Qui</label>
-                                            <input type="checkbox" class="btn-check" id="dia_5" value="5" checked><label class="btn btn-outline-secondary btn-sm" for="dia_5">Sex</label>
-                                            <input type="checkbox" class="btn-check" id="dia_6" value="6"><label class="btn btn-outline-secondary btn-sm" for="dia_6">Sáb</label>
-                                            <input type="checkbox" class="btn-check" id="dia_0" value="0"><label class="btn btn-outline-secondary btn-sm" for="dia_0">Dom</label>
-                                        </div>
-                                    </div>
+                                    <div class="col-md-9"><label class="small d-block">Dias Trabalhados</label><div class="btn-group" role="group"><input type="checkbox" class="btn-check" id="dia_1" value="1" checked><label class="btn btn-outline-secondary btn-sm" for="dia_1">Seg</label><input type="checkbox" class="btn-check" id="dia_2" value="2" checked><label class="btn btn-outline-secondary btn-sm" for="dia_2">Ter</label><input type="checkbox" class="btn-check" id="dia_3" value="3" checked><label class="btn btn-outline-secondary btn-sm" for="dia_3">Qua</label><input type="checkbox" class="btn-check" id="dia_4" value="4" checked><label class="btn btn-outline-secondary btn-sm" for="dia_4">Qui</label><input type="checkbox" class="btn-check" id="dia_5" value="5" checked><label class="btn btn-outline-secondary btn-sm" for="dia_5">Sex</label><input type="checkbox" class="btn-check" id="dia_6" value="6"><label class="btn btn-outline-secondary btn-sm" for="dia_6">Sáb</label><input type="checkbox" class="btn-check" id="dia_0" value="0"><label class="btn btn-outline-secondary btn-sm" for="dia_0">Dom</label></div></div>
                                     <div class="col-md-6"><label class="small">Foto</label><input type="file" id="cadFoto" class="form-control"></div>
-                                    <div class="col-md-6 text-end align-self-end">
-                                        <button type="button" class="btn btn-secondary me-2 hidden" id="btn-cancel-edit" onclick="window.adminController.resetForm()">Cancelar</button>
-                                        <button type="submit" class="btn btn-success" id="btn-salvar">Salvar</button>
-                                    </div>
+                                    <div class="col-md-6 text-end align-self-end"><button type="button" class="btn btn-secondary me-2 hidden" id="btn-cancel-edit" onclick="window.adminController.resetForm()">Cancelar</button><button type="submit" class="btn btn-success" id="btn-salvar">Salvar</button></div>
                                 </div>
                             </form>
                         </div>
                     </div>
-                    <div class="table-responsive bg-white rounded shadow-sm"><table class="table table-hover mb-0" id="tabela-colaboradores"><thead class="table-light"><tr><th>Foto</th><th>ID</th><th>Nome/Cargo</th><th>Status (Férias)</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+                    <div class="table-responsive bg-white rounded shadow-sm"><table class="table table-hover mb-0" id="tabela-colaboradores"><thead class="table-light"><tr><th>Foto</th><th>ID</th><th>Nome/Cargo</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
                 </div>
 
                 <div class="tab-pane fade" id="pane-folha">
                     <div class="row mb-4 align-items-end">
-                        <div class="col-md-5">
-                            <label class="small fw-bold">Buscar e Selecionar Colaborador:</label>
-                            <div class="input-group mb-2">
-                                <span class="input-group-text bg-white">🔍</span>
-                                <input type="text" id="buscaFolha" class="form-control" placeholder="Nome, ID ou matrícula..." onkeyup="window.folhaController.filtrarSelect()">
-                            </div>
+                        <div class="col-md-6">
+                            <label class="small fw-bold">Buscar e Selecionar:</label>
+                            <div class="input-group mb-2"><span class="input-group-text bg-white">🔍</span><input type="text" id="buscaFolha" class="form-control" placeholder="Nome, ID..." onkeyup="window.folhaController.filtrarSelect()"></div>
                             <select id="selectFolhaFuncionario" class="form-select" onchange="window.folhaController.gerarFolha()"></select>
                         </div>
-                        <div class="col-md-7 text-end align-self-end">
-                            <div class="btn-group">
-                                <button id="btn-ferias" class="btn btn-warning hidden" onclick="window.folhaController.abrirModalFerias()">🏖️ Agendar Férias</button>
-                                <button class="btn btn-success" onclick="window.db.downloadCSV()">📥 Relatório Geral</button>
-                            </div>
+                        <div class="col-md-6 text-end align-self-end">
+                            <button id="btn-ferias" class="btn btn-warning me-2 hidden" onclick="window.folhaController.abrirModalFerias()">🏖️ Férias</button>
+                            <button class="btn btn-success" onclick="window.db.downloadCSV()">📥 Excel Geral</button>
                         </div>
                     </div>
                     <div id="area-resumo-individual" class="hidden">
                         <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3 border">
-                            <div>
-                                <h5 class="m-0 text-primary">📅 Folha de Ponto</h5>
-                                <small id="status-ferias-display" class="text-danger fw-bold hidden"></small>
-                            </div>
+                            <div><h5 class="m-0 text-primary">📅 Folha de Ponto</h5><small id="status-ferias-display" class="text-danger fw-bold hidden"></small></div>
                             <div><small class="text-muted d-block text-end">Saldo</small><h3 id="saldoTotalDisplay" class="m-0 text-end">--:--</h3></div>
                         </div>
-                        <div class="table-responsive bg-white shadow-sm rounded">
-                            <table class="table table-striped table-bordered mb-0 align-middle" id="tabela-folha">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th style="width: 15%">Data</th>
-                                        <th style="width: 45%">Registros</th>
-                                        <th>Trab.</th>
-                                        <th>Meta</th>
-                                        <th>Saldo</th>
-                                        <th>Ações</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+                        <div class="table-responsive bg-white shadow-sm rounded"><table class="table table-striped table-bordered mb-0 align-middle" id="tabela-folha"><thead class="table-dark"><tr><th>Data</th><th>Registros</th><th>Trab.</th><th>Meta</th><th>Saldo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
                     </div>
                 </div>
 
                 <div class="tab-pane fade" id="pane-cracha">
-                    <div class="row justify-content-center">
-                        <div class="col-md-6 mb-3">
-                            <select id="selectColaboradorQr" class="form-select mb-2"></select>
-                            <button class="btn btn-primary w-100" onclick="window.adminController.gerarCracha()">🪪 Visualizar Crachá</button>
-                        </div>
-                    </div>
-                    <div id="cracha-preview-area" class="text-center hidden mt-3">
-                        <div id="printable-area">
-                            <div class="id-card-container">
-                                <div class="id-card-header"><h3 class="fw-bold text-primary m-0">GCMN</h3><small>IDENTIFICAÇÃO</small></div>
-                                <div class="id-card-body">
-                                    <img id="card-foto" src="" class="id-card-photo"><h2 id="card-nome" class="id-card-name">NOME</h2><p id="card-cargo" class="id-card-role">CARGO</p>
-                                    <div class="id-card-info">ID: <strong id="card-id">00</strong> | Mat: <strong id="card-matricula">00</strong></div>
-                                </div>
-                                <div class="id-card-footer"><div id="card-qr"></div></div>
-                            </div>
-                        </div>
-                        <button class="btn btn-dark mt-3 px-5 no-print" onclick="window.print()">Imprimir</button>
-                    </div>
+                    <div class="row justify-content-center"><div class="col-md-6 mb-3"><select id="selectColaboradorQr" class="form-select mb-2"></select><button class="btn btn-primary w-100" onclick="window.adminController.gerarCracha()">🪪 Visualizar Crachá</button></div></div>
+                    <div id="cracha-preview-area" class="text-center hidden mt-3"><div id="printable-area"><div class="id-card-container"><div class="id-card-header"><h3 class="fw-bold text-primary m-0">GCMN</h3><small>IDENTIFICAÇÃO</small></div><div class="id-card-body"><img id="card-foto" src="" class="id-card-photo"><h2 id="card-nome" class="id-card-name">NOME</h2><p id="card-cargo" class="id-card-role">CARGO</p><div class="id-card-info">ID: <strong id="card-id">00</strong> | Mat: <strong id="card-matricula">00</strong></div></div><div class="id-card-footer"><div id="card-qr"></div></div></div></div><button class="btn btn-dark mt-3 px-5 no-print" onclick="window.print()">Imprimir</button></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="modalEdicaoPonto" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-warning"><h5 class="modal-title">📝 Ajuste Manual</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <h6 id="modal-data-titulo" class="fw-bold mb-3"></h6>
-                    <div class="list-group mb-3" id="lista-registros-modal"></div>
-                    <hr><h6>Novo Registro:</h6>
-                    <div class="row g-2">
-                        <div class="col-5">
-                            <select id="novo-tipo" class="form-select form-select-sm">
-                                <option value="ENTRADA_TRABALHO">🟢 Entrada</option>
-                                <option value="SAIDA_ALMOCO">🍽️ Saída Almoço</option>
-                                <option value="RETORNO_ALMOCO">🔙 Volta Almoço</option>
-                                <option value="SAIDA_TRABALHO">🔴 Saída</option>
-                            </select>
-                        </div>
-                        <div class="col-4"><input type="time" id="novo-horario" class="form-control form-select-sm"></div>
-                        <div class="col-3"><button class="btn btn-success btn-sm w-100" onclick="window.folhaController.adicionarManual()">Add</button></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modalFerias" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-info text-white"><h5 class="modal-title">🏖️ Agendar Férias</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <p>Defina o período em que o colaborador estará de férias. O ponto será bloqueado automaticamente nestas datas.</p>
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <label class="form-label">Data Início</label>
-                            <input type="date" id="feriasInicio" class="form-control">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">Data Fim</label>
-                            <input type="date" id="feriasFim" class="form-control">
-                        </div>
-                    </div>
-                    <div class="mt-3 text-end">
-                        <button type="button" class="btn btn-outline-danger me-2" onclick="window.folhaController.removerFerias()">🗑️ Limpar Férias</button>
-                        <button type="button" class="btn btn-primary" onclick="window.folhaController.salvarFerias()">💾 Salvar Período</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modalVisualizacao" class="image-modal-overlay hidden" onclick="this.classList.add('hidden')"><img id="imgModalFull" class="image-modal-content" src=""></div>
-
+    <div class="modal fade" id="modalEdicaoPonto" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-warning"><h5 class="modal-title">📝 Ajuste</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><h6 id="modal-data-titulo" class="fw-bold mb-3"></h6><div class="list-group mb-3" id="lista-registros-modal"></div><hr><h6>Novo:</h6><div class="row g-2"><div class="col-5"><select id="novo-tipo" class="form-select form-select-sm"><option value="ENTRADA_TRABALHO">🟢 Entrada</option><option value="SAIDA_ALMOCO">🍽️ Saída Almoço</option><option value="RETORNO_ALMOCO">🔙 Volta Almoço</option><option value="SAIDA_TRABALHO">🔴 Saída</option></select></div><div class="col-4"><input type="time" id="novo-horario" class="form-control form-select-sm"></div><div class="col-3"><button class="btn btn-success btn-sm w-100" onclick="window.folhaController.adicionarManual()">Add</button></div></div></div></div></div></div>
+    <div class="modal fade" id="modalFerias" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-info text-white"><h5 class="modal-title">🏖️ Férias</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row g-3"><div class="col-6"><label>Início</label><input type="date" id="feriasInicio" class="form-control"></div><div class="col-6"><label>Fim</label><input type="date" id="feriasFim" class="form-control"></div></div><div class="mt-3 text-end"><button class="btn btn-outline-danger me-2" onclick="window.folhaController.removerFerias()">Limpar</button><button class="btn btn-primary" onclick="window.folhaController.salvarFerias()">Salvar</button></div></div></div></div></div>
+    
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -344,43 +280,40 @@
         const firebaseApp = initializeApp(firebaseConfig);
         const firestore = getFirestore(firebaseApp);
 
+        // --- UTILS ---
         const timeUtils = {
             minToTime: (m) => { const s=m<0?"-":""; m=Math.abs(m); return `${s}${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; },
             timeToMin: (t) => { const[h,m]=t.split(':').map(Number); return (h*60)+m; },
             formatDate: (iso) => iso.split('-').reverse().join('/')
         };
-        
         const ui = {
-            reset: () => {
-                document.getElementById('status-spinner').classList.add('hidden');
+            reset: () => { 
+                document.getElementById('status-overlay').classList.add('hidden');
+                document.getElementById('status-spinner').classList.add('hidden'); 
                 document.getElementById('status-icon').classList.add('hidden');
                 document.getElementById('error-icon').classList.add('hidden');
-                document.getElementById('status-text').innerText = '';
-                document.getElementById('status-subtext').innerText = '';
+                document.getElementById('status-subtext').innerText = "";
             },
             loading: (show, text="Processando...") => {
-                const overlay = document.getElementById('status-overlay');
+                ui.reset();
                 if(show) {
-                    ui.reset();
                     document.getElementById('status-spinner').classList.remove('hidden');
                     document.getElementById('status-text').innerText = text;
-                    overlay.classList.remove('hidden');
-                } else {
-                    overlay.classList.add('hidden');
+                    document.getElementById('status-overlay').classList.remove('hidden');
                 }
             },
             success: (text) => {
                 ui.reset();
-                document.getElementById('status-overlay').classList.remove('hidden');
                 document.getElementById('status-icon').classList.remove('hidden');
                 document.getElementById('status-text').innerText = text;
-            },
-            error: (text, subtext) => {
-                ui.reset();
                 document.getElementById('status-overlay').classList.remove('hidden');
+            },
+            error: (text, sub) => {
+                ui.reset();
                 document.getElementById('error-icon').classList.remove('hidden');
                 document.getElementById('status-text').innerText = text;
-                if(subtext) document.getElementById('status-subtext').innerText = subtext;
+                if(sub) document.getElementById('status-subtext').innerText = sub;
+                document.getElementById('status-overlay').classList.remove('hidden');
             },
             compressImage: (file) => new Promise((resolve) => {
                 const r = new FileReader(); r.readAsDataURL(file);
@@ -388,24 +321,7 @@
             })
         };
 
-        window.cameraManager = {
-            stream: null,
-            startHome: async () => {
-                const vid = document.getElementById('videoHome');
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                    window.cameraManager.stream = stream;
-                    vid.srcObject = stream;
-                } catch(e) { console.log("Câmera Home erro", e); }
-            },
-            stop: () => {
-                if(window.cameraManager.stream) {
-                    window.cameraManager.stream.getTracks().forEach(track => track.stop());
-                    window.cameraManager.stream = null;
-                }
-            }
-        };
-
+        // --- CORE DB ---
         window.db = {
             buscarPorId: async (id) => getDocs(query(collection(firestore, "colaboradores"), where("id", "==", id))),
             verificarDuplicidade: async (id, dataStr, tipo) => {
@@ -449,65 +365,139 @@
             ui.loading(false);
         };
 
+        // --- PONTO CONTROLLER ---
         window.pontoController = {
             scanner: null, dadosFuncionario: null, tipoSelecionado: null,
-            selecionarTipo: (t) => { window.pontoController.tipoSelecionado = t; window.app.navegar('registro'); window.pontoController.iniciarScanner(); },
-            iniciarScanner: () => {
-                document.getElementById('step-qr').classList.remove('hidden'); document.getElementById('step-foto').classList.add('hidden');
-                if(!window.pontoController.scanner) { window.pontoController.scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 }); window.pontoController.scanner.render(window.pontoController.onScan, ()=>{}); }
+            
+            init: () => {
+                // Inicia scanner na tela inicial
+                window.pontoController.scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250, aspectRatio: 1.0 });
+                window.pontoController.scanner.render(window.pontoController.onScan, ()=>{});
             },
-            cancelar: () => { if(window.pontoController.scanner) window.pontoController.scanner.clear(); window.app.navegar('home'); },
-            onScan: async (t) => {
-                window.pontoController.scanner.clear(); window.pontoController.scanner = null; document.getElementById('qr-reader').innerHTML = "";
-                let id = t.includes(',') ? t.split(',')[0] : t; id = id.trim();
-                ui.loading(true, "Buscando...");
+
+            selecionar: (tipo, btnElement) => {
+                // UI Feedback
+                document.querySelectorAll('.btn-tablet').forEach(b => b.classList.remove('selected'));
+                btnElement.classList.add('selected');
+                window.pontoController.tipoSelecionado = tipo;
+                
+                // Muda texto do status
+                const labels = {
+                    'ENTRADA_TRABALHO': 'Registrando: ENTRADA 🟢',
+                    'SAIDA_ALMOCO': 'Registrando: SAÍDA ALMOÇO 🍽️',
+                    'RETORNO_ALMOCO': 'Registrando: VOLTA ALMOÇO 🔙',
+                    'SAIDA_TRABALHO': 'Registrando: SAÍDA 🔴'
+                };
+                document.getElementById('scanner-status').innerText = `${labels[tipo]} - Aproxime o Crachá`;
+                document.getElementById('scanner-status').style.color = '#fff'; // Destaque
+            },
+
+            onScan: async (texto) => {
+                if (!window.pontoController.tipoSelecionado) {
+                    // Feedback visual se não tiver selecionado
+                    document.getElementById('scanner-status').innerText = "⚠️ SELECIONE UMA OPÇÃO PRIMEIRO!";
+                    document.getElementById('scanner-status').style.color = '#ffc107';
+                    return; // Ignora scan se não selecionou
+                }
+
+                // Pausa o scanner para processar
+                window.pontoController.scanner.pause();
+
+                let id = texto.includes(',') ? texto.split(',')[0] : texto; id = id.trim();
+                ui.loading(true, "Verificando...");
+
                 const s = await window.db.buscarPorId(id);
-                if(s.empty) { ui.error("ID Não Encontrado!"); setTimeout(() => { ui.loading(false); window.app.navegar('home'); }, 2000); return; }
+                if(s.empty) { 
+                    ui.error("ID Não Encontrado!"); 
+                    setTimeout(() => window.pontoController.resetScan(), 2000); 
+                    return; 
+                }
                 
                 const d = s.docs[0].data();
                 
-                // VERIFICAÇÃO AUTOMÁTICA DE FÉRIAS (CALENDÁRIO)
-                const hoje = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-                if (d.feriasInicio && d.feriasFim) {
-                    if (hoje >= d.feriasInicio && hoje <= d.feriasFim) {
-                        ui.error("ACESSO BLOQUEADO", `Em férias até ${timeUtils.formatDate(d.feriasFim)}`);
-                        setTimeout(() => { ui.loading(false); window.app.navegar('home'); }, 4000);
-                        return;
-                    }
+                // VERIFICA FÉRIAS
+                const hoje = new Date().toISOString().split('T')[0];
+                if (d.feriasInicio && d.feriasFim && hoje >= d.feriasInicio && hoje <= d.feriasFim) {
+                    ui.error("ACESSO BLOQUEADO", `Em férias até ${timeUtils.formatDate(d.feriasFim)}`);
+                    setTimeout(() => window.pontoController.resetScan(), 3000);
+                    return;
                 }
 
+                // VERIFICA DUPLICIDADE
                 const dup = await window.db.verificarDuplicidade(id, new Date().toLocaleDateString('pt-BR'), window.pontoController.tipoSelecionado);
-                if(dup) { ui.error("Ação Duplicada!", "Já registrado hoje."); setTimeout(() => { ui.loading(false); window.app.navegar('home'); }, 3000); return; }
-                
+                if(dup) { 
+                    ui.error("Ação Duplicada!", "Já registrado hoje."); 
+                    setTimeout(() => window.pontoController.resetScan(), 3000); 
+                    return; 
+                }
+
+                // Tudo OK -> Capturar Foto
                 window.pontoController.dadosFuncionario = d;
-                document.getElementById('msg-ola').innerText = `Olá, ${d.nome}`;
-                ui.loading(false);
-                document.getElementById('step-qr').classList.add('hidden'); document.getElementById('step-foto').classList.remove('hidden');
-                setTimeout(window.pontoController.iniciarCamera, 500);
+                ui.reset(); // Tira loading
+                window.pontoController.iniciarCapturaFoto();
             },
-            iniciarCamera: async () => {
-                const vid = document.getElementById('videoElement');
-                try {
-                    const stm = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                    vid.srcObject = stm;
-                    let c = 3; 
-                    document.getElementById('countdown-display').innerText = c;
-                    const i = setInterval(() => { 
-                        c--; 
-                        if(c>0) document.getElementById('countdown-display').innerText = c;
-                        else { clearInterval(i); document.getElementById('countdown-display').innerText = "📸"; window.pontoController.salvar(); } 
-                    }, 1000);
-                } catch(e) { alert("Câmera erro"); }
+
+            resetScan: () => {
+                ui.reset();
+                // Limpa seleção
+                window.pontoController.tipoSelecionado = null;
+                document.querySelectorAll('.btn-tablet').forEach(b => b.classList.remove('selected'));
+                document.getElementById('scanner-status').innerText = "← Selecione uma opção ao lado";
+                document.getElementById('scanner-status').style.color = 'white';
+                // Retoma scanner
+                try { window.pontoController.scanner.resume(); } catch(e){}
             },
-            salvar: async () => {
-                ui.loading(true, "Salvando...");
-                const vid = document.getElementById('videoElement'); const cvs = document.getElementById('canvasElement');
-                cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
-                cvs.getContext('2d').drawImage(vid, 0, 0);
-                const foto = cvs.toDataURL('image/jpeg', 0.5);
-                vid.srcObject.getTracks().forEach(t => t.stop());
-                const now = new Date();
+
+            iniciarCapturaFoto: async () => {
+                const modal = document.getElementById('capture-modal');
+                const video = document.getElementById('videoCapture');
+                const msg = document.getElementById('capture-msg');
+                const count = document.getElementById('capture-countdown');
                 
+                msg.innerText = `Olá, ${window.pontoController.dadosFuncionario.nome.split(' ')[0]}!`;
+                modal.classList.remove('hidden');
+
+                try {
+                    // Para o scanner para liberar a câmera (no mobile pode dar conflito)
+                    // No desktop funciona, mas vamos garantir.
+                    // Nota: Html5QrcodeScanner não libera fácil, mas pause() ajuda.
+                    
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    video.srcObject = stream;
+                    
+                    let c = 3;
+                    count.innerText = c;
+                    
+                    const interval = setInterval(() => {
+                        c--;
+                        if(c > 0) count.innerText = c;
+                        else {
+                            clearInterval(interval);
+                            count.innerText = "📸";
+                            // Tira foto
+                            const canvas = document.getElementById('canvasCapture');
+                            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                            canvas.getContext('2d').drawImage(video, 0, 0);
+                            const foto = canvas.toDataURL('image/jpeg', 0.5);
+                            
+                            // Para vídeo
+                            stream.getTracks().forEach(t => t.stop());
+                            modal.classList.add('hidden');
+                            
+                            window.pontoController.salvarPonto(foto);
+                        }
+                    }, 1000);
+
+                } catch(e) { 
+                    alert("Erro na câmera: " + e.message); 
+                    modal.classList.add('hidden');
+                    window.pontoController.resetScan();
+                }
+            },
+
+            salvarPonto: async (foto) => {
+                ui.loading(true, "Salvando...");
+                const now = new Date();
                 await window.db.registrarPonto({
                     id: window.pontoController.dadosFuncionario.id,
                     nome: window.pontoController.dadosFuncionario.nome,
@@ -518,15 +508,13 @@
                     dataStr: now.toLocaleDateString('pt-BR'),
                     horaStr: now.toLocaleTimeString('pt-BR')
                 });
-
-                ui.success("Ponto Registrado!");
-                setTimeout(() => {
-                    ui.loading(false); 
-                    window.app.navegar('home');
-                }, 2500);
+                
+                ui.success("Registrado com Sucesso!");
+                setTimeout(() => window.pontoController.resetScan(), 2000);
             }
         };
 
+        // --- FOLHA & ADMIN (MANTIDOS IGUAIS AO ANTERIOR, SÓ RECONECTANDO) ---
         window.folhaController = {
             cacheFuncionarios: [], cachePontosDia: [], funcSelecionado: null, cacheTodosPontos: [],
             carregarSelect: async () => {
@@ -561,18 +549,13 @@
                     if (!func) { const snap = await window.db.buscarPorId(id); if (!snap.empty) func = snap.docs[0].data(); }
                     window.folhaController.funcSelecionado = func;
                     
-                    // Mostra botão de Férias
                     document.getElementById('btn-ferias').classList.remove('hidden');
-                    
-                    // Exibe Status de Férias se houver
                     const feriasEl = document.getElementById('status-ferias-display');
                     const hoje = new Date().toISOString().split('T')[0];
                     if (func.feriasInicio && func.feriasFim && hoje <= func.feriasFim) {
                         feriasEl.innerText = `🏖️ Férias: ${timeUtils.formatDate(func.feriasInicio)} até ${timeUtils.formatDate(func.feriasFim)}`;
                         feriasEl.classList.remove('hidden');
-                    } else {
-                        feriasEl.classList.add('hidden');
-                    }
+                    } else { feriasEl.classList.add('hidden'); }
 
                     const escalaDias = func.escalaDias || ["1","2","3","4","5"];
                     const cargaMin = (func.escalaHoras || 8) * 60;
@@ -591,16 +574,8 @@
                     }).forEach(data => {
                         const regs = dias[data];
                         const regsStr = regs.map(r => {
-                            let imgHtml = "";
-                            if(r.foto) {
-                                imgHtml = `<img src="${r.foto}" class="evidence-thumb" onclick="document.getElementById('imgModalFull').src = this.src; document.getElementById('modalVisualizacao').classList.remove('hidden');" title="Ver Foto">`;
-                            } else {
-                                imgHtml = `<div class="evidence-thumb bg-secondary text-white d-flex align-items-center justify-content-center" style="font-size:10px">S/F</div>`;
-                            }
-                            let corBadge = 'bg-secondary';
-                            if(r.tipo.includes('ENTRADA')) corBadge = 'bg-success';
-                            if(r.tipo.includes('SAIDA')) corBadge = 'bg-danger';
-                            if(r.tipo.includes('ALMOCO')) corBadge = 'bg-warning text-dark';
+                            let imgHtml = r.foto ? `<img src="${r.foto}" class="evidence-thumb" onclick="document.getElementById('imgModalFull').src = this.src; document.getElementById('modalVisualizacao').classList.remove('hidden');" title="Ver Foto">` : `<div class="evidence-thumb bg-secondary text-white d-flex align-items-center justify-content-center" style="font-size:10px">S/F</div>`;
+                            let corBadge = r.tipo.includes('ENTRADA') ? 'bg-success' : (r.tipo.includes('SAIDA') ? 'bg-danger' : 'bg-warning text-dark');
                             return `<div class="registro-item">${imgHtml}<span class="badge ${corBadge}">${r.horaStr}</span></div>`;
                         }).join('');
                         
@@ -622,15 +597,7 @@
                         else if(saldo < 0 && meta>0) stt="Devendo";
                         else if(saldo > 0) stt="Extra";
 
-                        tbody.innerHTML += `<tr>
-                            <td>${data}</td>
-                            <td>${regsStr}</td>
-                            <td>${timeUtils.minToTime(trab)}</td>
-                            <td>${timeUtils.minToTime(meta)}</td>
-                            <td class="${saldo>=0?'balance-positive':'balance-negative'}">${timeUtils.minToTime(saldo)}</td>
-                            <td>${stt}</td>
-                            <td><button class="btn btn-sm btn-outline-warning" onclick="window.folhaController.abrirModalEdicao('${data}')">📝</button></td>
-                        </tr>`;
+                        tbody.innerHTML += `<tr><td>${data}</td><td>${regsStr}</td><td>${timeUtils.minToTime(trab)}</td><td>${timeUtils.minToTime(meta)}</td><td class="${saldo>=0?'balance-positive':'balance-negative'}">${timeUtils.minToTime(saldo)}</td><td><button class="btn btn-sm btn-outline-warning" onclick="window.folhaController.abrirModalEdicao('${data}')">📝</button></td></tr>`;
                     });
 
                     const el = document.getElementById('saldoTotalDisplay');
@@ -651,27 +618,21 @@
                 const ini = document.getElementById('feriasInicio').value;
                 const fim = document.getElementById('feriasFim').value;
                 if(!ini || !fim) return alert("Preencha ambas as datas.");
-                if(ini > fim) return alert("A data de início deve ser anterior ao fim.");
-                
+                if(ini > fim) return alert("Erro nas datas.");
                 ui.loading(true);
                 await window.db.editarColaborador(window.folhaController.funcSelecionado.docId, { feriasInicio: ini, feriasFim: fim });
-                
-                // Atualiza cache local para refletir na hora
                 window.folhaController.funcSelecionado.feriasInicio = ini;
                 window.folhaController.funcSelecionado.feriasFim = fim;
-                
                 bootstrap.Modal.getInstance(document.getElementById('modalFerias')).hide();
-                window.folhaController.gerarFolha(); // Recarrega tela
+                window.folhaController.gerarFolha();
                 ui.loading(false);
             },
             removerFerias: async () => {
-                if(!confirm("Remover o período de férias?")) return;
+                if(!confirm("Remover férias?")) return;
                 ui.loading(true);
                 await window.db.editarColaborador(window.folhaController.funcSelecionado.docId, { feriasInicio: null, feriasFim: null });
-                
                 window.folhaController.funcSelecionado.feriasInicio = null;
                 window.folhaController.funcSelecionado.feriasFim = null;
-                
                 bootstrap.Modal.getInstance(document.getElementById('modalFerias')).hide();
                 window.folhaController.gerarFolha();
                 ui.loading(false);
@@ -745,14 +706,9 @@
                 cols.forEach(c => {
                     sel.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
                     const json = JSON.stringify(c).replace(/"/g, '&quot;');
-                    
-                    // STATUS NA TABELA
                     const hoje = new Date().toISOString().split('T')[0];
                     let status = '<span class="text-success">Ativo</span>';
-                    if(c.feriasInicio && c.feriasFim && hoje <= c.feriasFim) {
-                        status = '<span class="text-danger fw-bold">Em Férias</span>';
-                    }
-
+                    if(c.feriasInicio && c.feriasFim && hoje <= c.feriasFim) status = '<span class="text-danger fw-bold">Em Férias</span>';
                     tbody.innerHTML += `<tr><td>${c.fotoPerfil?'<img src="'+c.fotoPerfil+'" class="profile-thumb-small">':'?'}</td><td>${c.id}</td><td>${c.nome}<br><small>${c.cargo}</small></td><td>${status}</td><td><button class="btn btn-sm btn-primary" onclick="window.adminController.editar(${json})">✏️</button> <button class="btn btn-sm btn-danger" onclick="window.adminController.deletar('${c.docId}')">🗑️</button></td></tr>`;
                 });
             },
@@ -783,7 +739,11 @@
             navegar: (v) => { 
                 document.querySelectorAll('.view-section').forEach(e=>e.classList.add('hidden')); 
                 document.getElementById('view-'+v).classList.remove('hidden'); 
-                if(v === 'home') window.cameraManager.startHome(); else window.cameraManager.stop();
+                if(v === 'home') {
+                    // Inicializa scanner apenas na primeira vez
+                    if(!window.pontoController.scanner) window.pontoController.init();
+                    else window.pontoController.resetScan();
+                }
                 if(v==='admin') window.adminController.carregarLista(); 
             },
             verificarAdmin: () => sessionStorage.getItem('admin_logado') ? window.app.navegar('admin') : window.app.navegar('login'),
