@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto System - GCMN (Crachás Corrigidos)</title>
+    <title>Ponto System - GCMN (Crachá Personalizado)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -18,49 +18,126 @@
         .test-mode-banner { background-color: #ffc107; color: #000; text-align: center; font-weight: bold; padding: 5px; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; }
         body.testing-mode { padding-top: 35px; }
 
-        /* UI Elements */
-        .camera-container { position: relative; width: 100%; max-width: 600px; margin: auto; overflow: hidden; border-radius: 12px; background: #000; }
-        #videoElement { width: 100%; transform: scaleX(-1); }
-        .btn-tablet { height: 120px; font-size: 1.4rem; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s; }
-        .btn-tablet:active { transform: scale(0.98); }
-        .clock-container { margin-bottom: 30px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid #0d6efd; }
-        .clock-time { font-size: 4rem; font-weight: 800; color: #212529; line-height: 1; letter-spacing: -2px; }
-        
-        /* FOTOS E MINIATURAS */
-        .profile-thumb-small { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; border: 1px solid #dee2e6; }
-        .evidence-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 2px solid #dee2e6; cursor: pointer; transition: transform 0.2s; display: block; margin: 0 auto 4px auto; }
-        .evidence-thumb:hover { transform: scale(1.5); border-color: #0d6efd; z-index: 10; position: relative; }
+        /* LAYOUT HOME */
+        .home-grid { display: flex; height: 85vh; gap: 20px; align-items: stretch; }
+        .left-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        .right-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+
+        /* SCANNER */
+        .scanner-wrapper {
+            background: #000; border-radius: 15px; overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 5px solid #fff;
+            position: relative; height: 100%; max-height: 500px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #qr-reader { width: 100%; height: 100%; border: none !important; }
+        #qr-reader video { object-fit: cover; width: 100%; height: 100%; }
+        .scanner-overlay {
+            position: absolute; bottom: 20px; left: 0; width: 100%;
+            text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            font-size: 1.2rem; font-weight: bold; pointer-events: none; z-index: 10;
+        }
+
+        /* BOTÕES */
+        .btn-tablet {
+            height: 100px; font-size: 1.3rem; font-weight: 700; margin-bottom: 15px;
+            border-radius: 12px; display: flex; align-items: center; justify-content: flex-start;
+            padding-left: 30px; position: relative; transition: all 0.2s; opacity: 0.6;
+            border: 2px solid transparent;
+        }
+        .btn-tablet:hover { opacity: 0.8; transform: translateY(-2px); }
+        .btn-tablet.selected { opacity: 1; box-shadow: 0 0 15px rgba(13, 110, 253, 0.5); border-color: #0d6efd; transform: scale(1.02); animation: pulse-border 1.5s infinite; }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); } 100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); } }
+
+        /* RELÓGIO */
+        .clock-widget { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .clock-time { font-size: 3.5rem; font-weight: 800; line-height: 1; color: #333; }
+        .clock-date { font-size: 1.1rem; color: #777; text-transform: capitalize; }
+
+        /* MINIATURAS */
+        .profile-thumb-small { width: 35px !important; height: 35px !important; min-width: 35px; object-fit: cover; border-radius: 50%; border: 1px solid #dee2e6; }
+        .evidence-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 2px solid #dee2e6; cursor: pointer; display: block; margin: 0 auto 4px auto; }
         .registro-item { display: inline-block; margin-right: 8px; text-align: center; vertical-align: top; }
 
-        /* Saldo */
-        .balance-positive { color: green; font-weight: bold; }
-        .balance-negative { color: red; font-weight: bold; }
-        
-        /* Loading */
+        /* UTILITÁRIOS */
         .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction: column; }
-        .success-icon { font-size: 6rem; color: #198754; animation: popIn 0.5s; margin-bottom: 20px; }
-        .error-icon { font-size: 6rem; color: #dc3545; animation: popIn 0.5s; margin-bottom: 20px; }
-        @keyframes popIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        /* Modal Foto Full */
-        .image-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; justify-content: center; align-items: center; }
+        .image-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .capture-video-container { width: 400px; height: 400px; border-radius: 50%; overflow: hidden; border: 5px solid #fff; position: relative; box-shadow: 0 0 30px rgba(255,255,255,0.2); }
+        #videoCapture { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .image-modal-content { max-width: 95%; max-height: 90vh; border: 3px solid white; border-radius: 8px; }
 
-        /* Crachá Impressão */
-        .id-card-container { width: 300px; height: 500px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .id-card-header { width: 100%; border-bottom: 2px solid #0d6efd; text-align: center; padding-bottom: 10px; margin-bottom: 20px; }
-        .id-card-photo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #0d6efd; margin-bottom: 15px; }
-        .id-card-name { font-size: 1.4rem; font-weight: 800; text-align: center; line-height: 1.2; }
-        .id-card-role { color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 15px; }
+        /* --- ESTILOS DO CRACHÁ (PERSONALIZADO #d37d18) --- */
+        .id-card-container {
+            width: 300px; height: 500px;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin: 0 auto;
+            display: flex; flex-direction: column; align-items: center;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .id-card-header {
+            width: 100%;
+            border-bottom: 3px solid #d37d18; /* Cor Personalizada */
+            text-align: center;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .id-card-header h3 {
+            color: #d37d18; /* Cor Personalizada */
+            font-weight: 900;
+            margin: 0;
+            font-size: 2rem;
+        }
+        .id-card-body {
+            flex-grow: 1;
+            display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+            width: 100%;
+        }
+        .id-card-photo {
+            width: 130px; height: 130px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #d37d18; /* Cor Personalizada */
+            margin-bottom: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .id-card-name {
+            font-size: 1.3rem; font-weight: 800; text-align: center; line-height: 1.1; margin: 5px 0; color: #333;
+        }
+        .id-card-role {
+            color: #d37d18; /* Cor Personalizada */
+            font-weight: 700; text-transform: uppercase; margin-bottom: 10px; font-size: 0.9rem;
+        }
+        .id-card-info {
+            background: #f8f9fa; padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; color: #555; margin-bottom: 10px;
+        }
+        .id-card-footer {
+            margin-top: auto;
+            display: flex; justify-content: center; width: 100%;
+        }
+        /* QR Code Container */
+        #card-qr {
+            border: 2px solid #eee;
+            padding: 5px;
+            border-radius: 8px;
+        }
 
+        /* PRINT */
         @media print {
             @page { size: auto; margin: 0mm; }
             body * { visibility: hidden; }
-            .test-mode-banner, .modal { display: none !important; }
+            .test-mode-banner, .modal, .loading-overlay { display: none !important; }
             #printable-area, #printable-area * { visibility: visible; }
             #printable-area { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; }
-            .id-card-container { width: 60mm !important; height: 100mm !important; border: none !important; padding: 5mm !important; justify-content: space-between !important; }
-            .no-print { display: none !important; }
+            /* Ajustes finos para impressão */
+            .id-card-container { width: 60mm !important; height: 100mm !important; border: none !important; padding: 5mm !important; justify-content: space-between !important; box-shadow: none !important; }
+            .id-card-photo { width: 35mm !important; height: 35mm !important; border-width: 2px !important; }
+            .id-card-name { font-size: 14pt !important; }
+            .id-card-header h3 { font-size: 18pt !important; }
+            /* Força cores na impressão */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style>
 </head>
@@ -69,14 +146,14 @@
     <div id="test-banner" class="test-mode-banner hidden">⚠️ MODO DE TESTE ATIVADO</div>
 
     <div id="status-overlay" class="loading-overlay hidden">
-        <div id="status-spinner" class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;"></div>
-        <div id="status-icon" class="success-icon hidden">✅</div>
-        <div id="error-icon" class="error-icon hidden">🚫</div>
+        <div id="status-spinner" class="spinner-border text-primary mb-3" style="width: 4rem; height: 4rem;"></div>
+        <div id="status-icon" class="hidden" style="font-size: 5rem;">✅</div>
+        <div id="error-icon" class="hidden" style="font-size: 5rem;">🚫</div>
         <h2 id="status-text" class="text-muted fw-bold">Carregando...</h2>
         <p id="status-subtext" class="text-danger fw-bold mt-2 fs-5"></p>
     </div>
 
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 px-3 shadow no-print">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3 px-3 shadow no-print">
         <div class="container-fluid">
             <span class="navbar-brand fw-bold">☁️ Ponto System GCMN</span>
             <div class="d-flex">
@@ -86,68 +163,41 @@
         </div>
     </nav>
 
-    <div class="container no-print">
+    <div class="container-fluid px-4 no-print">
         
         <div id="view-home" class="view-section">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <div class="row">
-                        <div class="col-md-7">
-                            <div class="clock-container text-center">
-                                <div id="clock-time" class="clock-time">00:00:00</div>
-                                <div id="clock-date" class="clock-date">--</div>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-md-6"><button class="btn btn-success w-100 btn-tablet" onclick="window.pontoController.selecionarTipo('ENTRADA_TRABALHO')">🟢 ENTRADA</button></div>
-                                <div class="col-md-6"><button class="btn btn-warning w-100 btn-tablet text-dark" onclick="window.pontoController.selecionarTipo('SAIDA_ALMOCO')">🍽️ ALMOÇO (IDA)</button></div>
-                                <div class="col-md-6"><button class="btn btn-info w-100 btn-tablet text-white" onclick="window.pontoController.selecionarTipo('RETORNO_ALMOCO')">🔙 ALMOÇO (VOLTA)</button></div>
-                                <div class="col-md-6"><button class="btn btn-danger w-100 btn-tablet" onclick="window.pontoController.selecionarTipo('SAIDA_TRABALHO')">🔴 SAÍDA</button></div>
-                            </div>
-                        </div>
-                        <div class="col-md-5 d-flex align-items-center">
-                            <div style="width:100%; height:400px; background:#000; border-radius:15px; overflow:hidden; position:relative; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-                                <video id="videoHome" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; transform:scaleX(-1); opacity:0.8;"></video>
-                                <div style="position:absolute; bottom:10px; width:100%; text-align:center; color:white; font-weight:bold; text-shadow:0 2px 4px rgba(0,0,0,0.8);">Sistema Pronto</div>
-                            </div>
-                        </div>
+            <div class="home-grid">
+                <div class="left-panel">
+                    <div class="clock-widget">
+                        <div id="clock-time" class="clock-time">00:00</div>
+                        <div id="clock-date" class="clock-date">--</div>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <button class="btn btn-success btn-tablet" id="btn-entrada" onclick="window.pontoController.selecionar('ENTRADA_TRABALHO', this)"><span>🟢 ENTRADA</span></button>
+                        <button class="btn btn-warning text-dark btn-tablet" id="btn-almoco-ida" onclick="window.pontoController.selecionar('SAIDA_ALMOCO', this)"><span>🍽️ SAÍDA ALMOÇO</span></button>
+                        <button class="btn btn-info text-white btn-tablet" id="btn-almoco-volta" onclick="window.pontoController.selecionar('RETORNO_ALMOCO', this)"><span>🔙 VOLTA ALMOÇO</span></button>
+                        <button class="btn btn-danger btn-tablet" id="btn-saida" onclick="window.pontoController.selecionar('SAIDA_TRABALHO', this)"><span>🔴 SAÍDA</span></button>
+                    </div>
+                </div>
+                <div class="right-panel">
+                    <div class="scanner-wrapper">
+                        <div id="qr-reader"></div>
+                        <div class="scanner-overlay" id="scanner-status">&larr; Selecione uma opção ao lado</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="view-registro" class="view-section hidden">
-            <div class="row justify-content-center">
-                <div class="col-md-8 text-center">
-                    <div class="card shadow border-0">
-                        <div class="card-header bg-primary text-white py-3"><h4 class="m-0">Registrando...</h4></div>
-                        <div class="card-body p-4">
-                            <div id="step-qr">
-                                <p class="lead">Aproxime o Crachá</p>
-                                <div id="qr-reader" class="mb-3 rounded border"></div>
-                                <button class="btn btn-secondary" onclick="window.pontoController.cancelar()">Cancelar</button>
-                            </div>
-                            <div id="step-foto" class="hidden">
-                                <h5 id="msg-ola" class="text-success fw-bold mb-3">Olá!</h5>
-                                <div class="camera-container">
-                                    <video id="videoElement" autoplay playsinline></video>
-                                    <canvas id="canvasElement" class="hidden"></canvas>
-                                    <div id="countdown-display" class="position-absolute top-50 start-50 translate-middle text-white fw-bold" style="font-size: 5rem; text-shadow: 0 0 10px rgba(0,0,0,0.8);">3</div>
-                                </div>
-                                <p class="text-muted mt-2">Foto em 3s...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div id="capture-modal" class="image-modal-overlay hidden">
+            <h2 class="text-white fw-bold mb-4" id="capture-msg">Olá!</h2>
+            <div class="capture-video-container"><video id="videoCapture" autoplay playsinline></video></div>
+            <h1 class="text-white fw-bold mt-4" style="font-size: 4rem;" id="capture-countdown">3</h1>
+            <p class="text-white opacity-75">Tirando foto...</p>
+            <canvas id="canvasCapture" class="hidden"></canvas>
         </div>
 
         <div id="view-login" class="view-section hidden">
-            <div class="row justify-content-center"><div class="col-md-4"><div class="card shadow p-4 mt-5">
-                <h4 class="text-center mb-4">Acesso RH</h4>
-                <input type="password" id="adminPass" class="form-control mb-3" placeholder="Senha (admin123)">
-                <button class="btn btn-dark w-100" onclick="window.adminController.login()">Entrar</button>
-                <button class="btn btn-link w-100 mt-2" onclick="window.app.navegar('home')">Voltar ao Tablet</button>
-            </div></div></div>
+            <div class="row justify-content-center mt-5"><div class="col-md-4"><div class="card shadow p-4"><h4 class="text-center mb-4">Acesso RH</h4><input type="password" id="adminPass" class="form-control mb-3" placeholder="Senha (admin123)"><button class="btn btn-dark w-100" onclick="window.adminController.login()">Entrar</button></div></div></div>
         </div>
 
         <div id="view-admin" class="view-section hidden">
@@ -159,7 +209,7 @@
                 </div>
             </div>
 
-            <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
+            <ul class="nav nav-tabs mb-4">
                 <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pane-funcionarios">👥 Cadastro</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-folha" onclick="window.folhaController.carregarSelect()">📅 Folha de Ponto</button></li>
                 <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-cracha">🆔 Crachás</button></li>
@@ -191,22 +241,12 @@
 
                 <div class="tab-pane fade" id="pane-folha">
                     <div class="row mb-4 align-items-end">
-                        <div class="col-md-6">
-                            <label class="small fw-bold">Buscar e Selecionar Colaborador:</label>
-                            <div class="input-group mb-2"><span class="input-group-text bg-white">🔍</span><input type="text" id="buscaFolha" class="form-control" placeholder="Nome, ID ou matrícula..." onkeyup="window.folhaController.filtrarSelect()"></div>
-                            <select id="selectFolhaFuncionario" class="form-select" onchange="window.folhaController.gerarFolha()"></select>
-                        </div>
-                        <div class="col-md-6 text-end align-self-end">
-                            <button id="btn-ferias" class="btn btn-warning me-2 hidden" onclick="window.folhaController.abrirModalFerias()">🏖️ Férias</button>
-                            <button class="btn btn-success" onclick="window.db.downloadCSV()">📥 Relatório Geral</button>
-                        </div>
+                        <div class="col-md-6"><label class="small fw-bold">Buscar:</label><div class="input-group mb-2"><span class="input-group-text bg-white">🔍</span><input type="text" id="buscaFolha" class="form-control" placeholder="Nome..." onkeyup="window.folhaController.filtrarSelect()"></div><select id="selectFolhaFuncionario" class="form-select" onchange="window.folhaController.gerarFolha()"></select></div>
+                        <div class="col-md-6 text-end align-self-end"><button id="btn-ferias" class="btn btn-warning me-2 hidden" onclick="window.folhaController.abrirModalFerias()">🏖️ Férias</button><button class="btn btn-success" onclick="window.db.downloadCSV()">📥 Excel Geral</button></div>
                     </div>
                     <div id="area-resumo-individual" class="hidden">
-                        <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3 border">
-                            <div><h5 class="m-0 text-primary">📅 Folha de Ponto</h5><small id="status-ferias-display" class="text-danger fw-bold hidden"></small></div>
-                            <div><small class="text-muted d-block text-end">Saldo</small><h3 id="saldoTotalDisplay" class="m-0 text-end">--:--</h3></div>
-                        </div>
-                        <div class="table-responsive bg-white shadow-sm rounded"><table class="table table-striped table-bordered mb-0 align-middle" id="tabela-folha"><thead class="table-dark"><tr><th style="width:15%">Data</th><th style="width:45%">Registros</th><th>Trab.</th><th>Meta</th><th>Saldo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+                        <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3 border"><div><h5 class="m-0 text-primary">📅 Folha de Ponto</h5><small id="status-ferias-display" class="text-danger fw-bold hidden"></small></div><div><small class="text-muted d-block text-end">Saldo</small><h3 id="saldoTotalDisplay" class="m-0 text-end">--:--</h3></div></div>
+                        <div class="table-responsive bg-white shadow-sm rounded"><table class="table table-striped table-bordered mb-0 align-middle" id="tabela-folha"><thead class="table-dark"><tr><th>Data</th><th>Registros</th><th>Trab.</th><th>Meta</th><th>Saldo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
                     </div>
                 </div>
 
@@ -218,7 +258,28 @@
                             <button class="btn btn-primary w-100" onclick="window.adminController.gerarCracha()">🪪 Visualizar Crachá</button>
                         </div>
                     </div>
-                    <div id="cracha-preview-area" class="text-center hidden mt-3"><div id="printable-area"><div class="id-card-container"><div class="id-card-header"><h3 class="fw-bold text-primary m-0">GCMN</h3><small>IDENTIFICAÇÃO</small></div><div class="id-card-body"><img id="card-foto" src="" class="id-card-photo"><h2 id="card-nome" class="id-card-name">NOME</h2><p id="card-cargo" class="id-card-role">CARGO</p><div class="id-card-info">ID: <strong id="card-id">00</strong> | Mat: <strong id="card-matricula">00</strong></div></div><div class="id-card-footer"><div id="card-qr"></div></div></div></div><button class="btn btn-dark mt-3 px-5 no-print" onclick="window.print()">Imprimir</button></div>
+                    <div id="cracha-preview-area" class="text-center hidden mt-3">
+                        <div id="printable-area">
+                            <div class="id-card-container">
+                                <div class="id-card-header">
+                                    <h3>GCMN</h3>
+                                    <small>IDENTIFICAÇÃO</small>
+                                </div>
+                                <div class="id-card-body">
+                                    <img id="card-foto" src="" class="id-card-photo" alt="Foto">
+                                    <h2 id="card-nome" class="id-card-name">NOME</h2>
+                                    <p id="card-cargo" class="id-card-role">CARGO</p>
+                                    <div class="id-card-info">
+                                        ID: <strong id="card-id">00</strong> | Mat: <strong id="card-matricula">00</strong>
+                                    </div>
+                                </div>
+                                <div class="id-card-footer">
+                                    <div id="card-qr"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-dark mt-3 px-5 no-print" onclick="window.print()">🖨️ Imprimir</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -303,7 +364,7 @@
             }
         };
 
-        // --- CACHE COMPARTILHADO ---
+        // --- CACHE GLOBAL ---
         window.adminCache = [];
 
         window.db = {
@@ -351,57 +412,84 @@
 
         window.pontoController = {
             scanner: null, dadosFuncionario: null, tipoSelecionado: null,
-            selecionarTipo: (t) => { window.pontoController.tipoSelecionado = t; window.app.navegar('registro'); window.pontoController.iniciarScanner(); },
-            iniciarScanner: () => {
-                document.getElementById('step-qr').classList.remove('hidden'); document.getElementById('step-foto').classList.add('hidden');
-                if(!window.pontoController.scanner) { window.pontoController.scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 }); window.pontoController.scanner.render(window.pontoController.onScan, ()=>{}); }
+            init: () => {
+                window.pontoController.scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250, aspectRatio: 1.0 });
+                window.pontoController.scanner.render(window.pontoController.onScan, ()=>{});
             },
-            cancelar: () => { if(window.pontoController.scanner) window.pontoController.scanner.clear(); window.app.navegar('home'); },
-            onScan: async (t) => {
-                window.pontoController.scanner.clear(); window.pontoController.scanner = null; document.getElementById('qr-reader').innerHTML = "";
-                let id = t.includes(',') ? t.split(',')[0] : t; id = id.trim();
-                ui.loading(true, "Buscando...");
+            selecionar: (tipo, btnElement) => {
+                document.querySelectorAll('.btn-tablet').forEach(b => b.classList.remove('selected'));
+                btnElement.classList.add('selected');
+                window.pontoController.tipoSelecionado = tipo;
+                const labels = { 'ENTRADA_TRABALHO': '🟢 ENTRADA', 'SAIDA_ALMOCO': '🍽️ ALMOÇO', 'RETORNO_ALMOCO': '🔙 VOLTA', 'SAIDA_TRABALHO': '🔴 SAÍDA' };
+                const st = document.getElementById('scanner-status');
+                st.innerText = `${labels[tipo]} - Aproxime o Crachá`;
+                st.style.color = '#fff';
+            },
+            onScan: async (texto) => {
+                if (!window.pontoController.tipoSelecionado) {
+                    const st = document.getElementById('scanner-status');
+                    st.innerText = "⚠️ SELECIONE UMA OPÇÃO!";
+                    st.style.color = '#ffc107';
+                    return; 
+                }
+                window.pontoController.scanner.pause();
+                let id = texto.includes(',') ? texto.split(',')[0] : texto; id = id.trim();
+                ui.loading(true, "Verificando...");
+
                 const s = await window.db.buscarPorId(id);
-                if(s.empty) { ui.error("ID Não Encontrado!"); setTimeout(() => { ui.loading(false); window.app.navegar('home'); }, 2000); return; }
+                if(s.empty) { ui.error("ID Não Encontrado!"); setTimeout(() => window.pontoController.resetScan(), 2000); return; }
                 const d = s.docs[0].data();
                 
                 const hoje = new Date().toISOString().split('T')[0];
                 if (d.feriasInicio && d.feriasFim && hoje >= d.feriasInicio && hoje <= d.feriasFim) {
                     ui.error("ACESSO BLOQUEADO", `Em férias até ${timeUtils.formatDate(d.feriasFim)}`);
-                    setTimeout(() => { ui.loading(false); window.app.navegar('home'); }, 4000);
+                    setTimeout(() => window.pontoController.resetScan(), 3000);
                     return;
                 }
-
                 const dup = await window.db.verificarDuplicidade(id, new Date().toLocaleDateString('pt-BR'), window.pontoController.tipoSelecionado);
-                if(dup) { ui.error("Ação Duplicada!", "Já registrado hoje."); setTimeout(() => { ui.loading(false); window.app.navegar('home'); }, 3000); return; }
-                
+                if(dup) { ui.error("Ação Duplicada!", "Já registrado hoje."); setTimeout(() => window.pontoController.resetScan(), 3000); return; }
+
                 window.pontoController.dadosFuncionario = d;
-                document.getElementById('msg-ola').innerText = `Olá, ${d.nome}`;
-                ui.loading(false);
-                document.getElementById('step-qr').classList.add('hidden'); document.getElementById('step-foto').classList.remove('hidden');
-                setTimeout(window.pontoController.iniciarCamera, 500);
+                ui.reset();
+                window.pontoController.iniciarCapturaFoto();
             },
-            iniciarCamera: async () => {
-                const vid = document.getElementById('videoElement');
+            resetScan: () => {
+                ui.reset();
+                window.pontoController.tipoSelecionado = null;
+                document.querySelectorAll('.btn-tablet').forEach(b => b.classList.remove('selected'));
+                document.getElementById('scanner-status').innerText = "← Selecione uma opção";
+                document.getElementById('scanner-status').style.color = 'white';
+                try { window.pontoController.scanner.resume(); } catch(e){}
+            },
+            iniciarCapturaFoto: async () => {
+                const modal = document.getElementById('capture-modal');
+                const video = document.getElementById('videoCapture');
+                const msg = document.getElementById('capture-msg');
+                const count = document.getElementById('capture-countdown');
+                msg.innerText = `Olá, ${window.pontoController.dadosFuncionario.nome.split(' ')[0]}!`;
+                modal.classList.remove('hidden');
                 try {
-                    const stm = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-                    vid.srcObject = stm;
-                    let c = 3; 
-                    document.getElementById('countdown-display').innerText = c;
-                    const i = setInterval(() => { 
-                        c--; 
-                        if(c>0) document.getElementById('countdown-display').innerText = c;
-                        else { clearInterval(i); document.getElementById('countdown-display').innerText = "📸"; window.pontoController.salvar(); } 
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    video.srcObject = stream;
+                    let c = 3; count.innerText = c;
+                    const interval = setInterval(() => {
+                        c--; if(c > 0) count.innerText = c;
+                        else {
+                            clearInterval(interval);
+                            count.innerText = "📸";
+                            const canvas = document.getElementById('canvasCapture');
+                            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+                            canvas.getContext('2d').drawImage(video, 0, 0);
+                            const foto = canvas.toDataURL('image/jpeg', 0.5);
+                            stream.getTracks().forEach(t => t.stop());
+                            modal.classList.add('hidden');
+                            window.pontoController.salvarPonto(foto);
+                        }
                     }, 1000);
-                } catch(e) { alert("Câmera erro"); }
+                } catch(e) { alert("Câmera erro: " + e.message); modal.classList.add('hidden'); window.pontoController.resetScan(); }
             },
-            salvar: async () => {
+            salvarPonto: async (foto) => {
                 ui.loading(true, "Salvando...");
-                const vid = document.getElementById('videoElement'); const cvs = document.getElementById('canvasElement');
-                cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
-                cvs.getContext('2d').drawImage(vid, 0, 0);
-                const foto = cvs.toDataURL('image/jpeg', 0.5);
-                vid.srcObject.getTracks().forEach(t => t.stop());
                 const now = new Date();
                 await window.db.registrarPonto({
                     id: window.pontoController.dadosFuncionario.id,
@@ -413,17 +501,14 @@
                     dataStr: now.toLocaleDateString('pt-BR'),
                     horaStr: now.toLocaleTimeString('pt-BR')
                 });
-                ui.success("Ponto Registrado!");
-                setTimeout(() => { ui.loading(false); window.app.navegar('home'); }, 2500);
+                ui.success("Registrado!");
+                setTimeout(() => window.pontoController.resetScan(), 2000);
             }
         };
 
         window.folhaController = {
             funcSelecionado: null, cacheTodosPontos: [],
-            carregarSelect: async () => {
-                // Preenche usando o cache global
-                window.folhaController.atualizarOpcoesSelect(window.adminCache);
-            },
+            carregarSelect: async () => { window.folhaController.atualizarOpcoesSelect(window.adminCache); },
             filtrarSelect: () => {
                 const termo = document.getElementById('buscaFolha').value.toLowerCase();
                 const filtrados = window.adminCache.filter(c => c.nome.toLowerCase().includes(termo) || c.id.includes(termo) || (c.matricula && c.matricula.includes(termo)));
@@ -431,7 +516,7 @@
             },
             atualizarOpcoesSelect: (lista) => {
                 const sel = document.getElementById('selectFolhaFuncionario');
-                sel.innerHTML = '<option value="">Selecione um funcionário...</option>';
+                sel.innerHTML = '<option value="">Selecione...</option>';
                 lista.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nome} (ID: ${c.id})</option>`);
             },
             gerarFolha: async () => {
@@ -516,10 +601,8 @@
                 await window.db.editarColaborador(window.folhaController.funcSelecionado.docId, { feriasInicio: ini, feriasFim: fim });
                 window.folhaController.funcSelecionado.feriasInicio = ini;
                 window.folhaController.funcSelecionado.feriasFim = fim;
-                // Atualiza cache global
                 const idx = window.adminCache.findIndex(c => c.id === window.folhaController.funcSelecionado.id);
                 if(idx !== -1) window.adminCache[idx] = window.folhaController.funcSelecionado;
-                
                 bootstrap.Modal.getInstance(document.getElementById('modalFerias')).hide();
                 window.folhaController.gerarFolha();
                 ui.loading(false);
@@ -530,10 +613,8 @@
                 await window.db.editarColaborador(window.folhaController.funcSelecionado.docId, { feriasInicio: null, feriasFim: null });
                 window.folhaController.funcSelecionado.feriasInicio = null;
                 window.folhaController.funcSelecionado.feriasFim = null;
-                // Atualiza cache global
                 const idx = window.adminCache.findIndex(c => c.id === window.folhaController.funcSelecionado.id);
                 if(idx !== -1) window.adminCache[idx] = window.folhaController.funcSelecionado;
-
                 bootstrap.Modal.getInstance(document.getElementById('modalFerias')).hide();
                 window.folhaController.gerarFolha();
                 ui.loading(false);
@@ -601,24 +682,15 @@
             resetForm: () => { document.getElementById('formColaborador').reset(); document.getElementById('editDocId').value=""; document.getElementById('btn-cancel-edit').classList.add('hidden'); },
             carregarLista: async () => {
                 const cols = await window.db.listarColaboradores();
-                // ATUALIZA CACHE GLOBAL PARA TODOS OS MÓDULOS
-                window.adminCache = cols;
-                
-                // Preenche tabela
+                window.adminCache = cols; // UPDATE CACHE
                 const tbody = document.querySelector('#tabela-colaboradores tbody'); tbody.innerHTML = '';
-                
-                // Preenche Select de Crachá
                 const sel = document.getElementById('selectColaboradorQr'); sel.innerHTML = '<option value="">Selecione...</option>';
-                
                 cols.forEach(c => {
-                    // Tabela
                     const json = JSON.stringify(c).replace(/"/g, '&quot;');
                     const hoje = new Date().toISOString().split('T')[0];
                     let status = '<span class="text-success">Ativo</span>';
                     if(c.feriasInicio && c.feriasFim && hoje <= c.feriasFim) status = '<span class="text-danger fw-bold">Em Férias</span>';
                     tbody.innerHTML += `<tr><td>${c.fotoPerfil?'<img src="'+c.fotoPerfil+'" class="profile-thumb-small">':'?'}</td><td>${c.id}</td><td>${c.nome}<br><small>${c.cargo}</small></td><td>${status}</td><td><button class="btn btn-sm btn-primary" onclick="window.adminController.editar(${json})">✏️</button> <button class="btn btn-sm btn-danger" onclick="window.adminController.deletar('${c.docId}')">🗑️</button></td></tr>`;
-                    
-                    // Crachá
                     sel.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
                 });
             },
@@ -632,17 +704,15 @@
             deletar: async(id) => { if(confirm("Excluir?")) { await window.db.deletarColaborador(id); window.adminController.carregarLista(); } },
             gerarCracha: () => {
                 const id = document.getElementById('selectColaboradorQr').value;
-                // Busca no Cache Global
                 const c = window.adminCache.find(f => f.id === id); 
-                if(!c) { alert("Funcionário não encontrado no cache."); return; }
-                
+                if(!c) { alert("Colaborador não encontrado."); return; }
                 document.getElementById('card-nome').innerText = c.nome;
                 document.getElementById('card-cargo').innerText = c.cargo;
                 document.getElementById('card-id').innerText = c.id;
                 document.getElementById('card-matricula').innerText = c.matricula;
                 document.getElementById('card-foto').src = c.fotoPerfil || "";
                 document.getElementById('card-qr').innerHTML = "";
-                new QRCode(document.getElementById('card-qr'), { text: `${c.id},${c.nome}`, width:90, height:90 });
+                new QRCode(document.getElementById('card-qr'), { text: `${c.id},${c.nome}`, width: 160, height: 160 }); // QR MAIOR
                 document.getElementById('cracha-preview-area').classList.remove('hidden');
             }
         };
