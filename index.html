@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto System - GCMN (Home Scanner)</title>
+    <title>Ponto System - GCMN (Layout Ajustado)</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -11,58 +11,42 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <style>
-        body { background-color: #eef2f6; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; user-select: none; }
         .hidden { display: none !important; }
         
-        /* LAYOUT DA HOME */
+        /* BANNER TESTE */
+        .test-mode-banner { background-color: #ffc107; color: #000; text-align: center; font-weight: bold; padding: 5px; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; }
+        body.testing-mode { padding-top: 35px; }
+
+        /* LAYOUT HOME */
         .home-grid { display: flex; height: 85vh; gap: 20px; align-items: stretch; }
         .left-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; }
         .right-panel { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 
-        /* SCANNER CONTAINER */
+        /* SCANNER */
         .scanner-wrapper {
-            background: #000;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            border: 5px solid #fff;
-            position: relative;
-            height: 100%;
-            max-height: 500px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: #000; border-radius: 15px; overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 5px solid #fff;
+            position: relative; height: 100%; max-height: 500px;
+            display: flex; align-items: center; justify-content: center;
         }
         #qr-reader { width: 100%; height: 100%; border: none !important; }
         #qr-reader video { object-fit: cover; width: 100%; height: 100%; }
-        
+        .scanner-overlay {
+            position: absolute; bottom: 20px; left: 0; width: 100%;
+            text-align: center; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            font-size: 1.2rem; font-weight: bold; pointer-events: none; z-index: 10;
+        }
+
         /* BOTÕES */
         .btn-tablet {
-            height: 100px;
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            padding-left: 30px;
-            position: relative;
-            transition: all 0.2s;
-            opacity: 0.6; /* Apagado por padrão */
+            height: 100px; font-size: 1.3rem; font-weight: 700; margin-bottom: 15px;
+            border-radius: 12px; display: flex; align-items: center; justify-content: flex-start;
+            padding-left: 30px; position: relative; transition: all 0.2s; opacity: 0.6;
             border: 2px solid transparent;
         }
         .btn-tablet:hover { opacity: 0.8; transform: translateY(-2px); }
-        .btn-tablet i { font-size: 1.8rem; margin-right: 15px; }
-        
-        /* Efeito de Seleção */
-        .btn-tablet.selected {
-            opacity: 1;
-            box-shadow: 0 0 15px rgba(13, 110, 253, 0.5);
-            border-color: #0d6efd;
-            transform: scale(1.02);
-            animation: pulse-border 1.5s infinite;
-        }
+        .btn-tablet.selected { opacity: 1; box-shadow: 0 0 15px rgba(13, 110, 253, 0.5); border-color: #0d6efd; transform: scale(1.02); animation: pulse-border 1.5s infinite; }
         @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(13, 110, 253, 0); } 100% { box-shadow: 0 0 0 0 rgba(13, 110, 253, 0); } }
 
         /* RELÓGIO */
@@ -70,34 +54,26 @@
         .clock-time { font-size: 3.5rem; font-weight: 800; line-height: 1; color: #333; }
         .clock-date { font-size: 1.1rem; color: #777; text-transform: capitalize; }
 
-        /* STATUS MESSAGE NO SCANNER */
-        .scanner-overlay {
-            position: absolute; bottom: 20px; left: 0; width: 100%;
-            text-align: center; color: white; 
-            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
-            font-size: 1.2rem; font-weight: bold;
-            pointer-events: none;
-            z-index: 10;
+        /* --- CORREÇÃO: FOTOS DE CADASTRO MENORES --- */
+        .profile-thumb-small {
+            width: 35px !important;  /* Força largura */
+            height: 35px !important; /* Força altura */
+            min-width: 35px;
+            object-fit: cover;       /* Corta a imagem sem esticar */
+            border-radius: 50%;      /* Redondo */
+            border: 1px solid #dee2e6;
         }
+        .evidence-thumb { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; border: 2px solid #dee2e6; cursor: pointer; display: block; margin: 0 auto 4px auto; }
+        .registro-item { display: inline-block; margin-right: 8px; text-align: center; vertical-align: top; }
 
-        /* MODAL DE FOTO (CAPTURE) */
-        .photo-capture-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); z-index: 10000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .capture-video-container {
-            width: 400px; height: 400px; border-radius: 50%; overflow: hidden;
-            border: 5px solid #fff; position: relative; box-shadow: 0 0 30px rgba(255,255,255,0.2);
-        }
-        #videoCapture { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        
-        /* UTILS */
+        /* UTILITÁRIOS */
         .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction: column; }
-        .test-mode-banner { background-color: #ffc107; color: #000; text-align: center; font-weight: bold; padding: 5px; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; }
-        body.testing-mode { padding-top: 35px; }
-        
-        /* IMPRESSÃO */
+        .image-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .capture-video-container { width: 400px; height: 400px; border-radius: 50%; overflow: hidden; border: 5px solid #fff; position: relative; box-shadow: 0 0 30px rgba(255,255,255,0.2); }
+        #videoCapture { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        .image-modal-content { max-width: 95%; max-height: 90vh; border: 3px solid white; border-radius: 8px; }
+
+        /* PRINT */
         @media print {
             body * { visibility: hidden; }
             .test-mode-banner, .modal, .loading-overlay { display: none !important; }
@@ -105,7 +81,7 @@
             #printable-area { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; }
             .id-card-container { width: 60mm !important; height: 100mm !important; border: none !important; padding: 5mm !important; justify-content: space-between !important; }
         }
-        /* Estilos do Crachá (Tela) */
+        /* CRACHÁ */
         .id-card-container { width: 300px; height: 500px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
         .id-card-header { width: 100%; border-bottom: 2px solid #0d6efd; text-align: center; padding-bottom: 10px; margin-bottom: 20px; }
         .id-card-photo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #0d6efd; margin-bottom: 15px; }
@@ -138,59 +114,38 @@
     <div class="container-fluid px-4 no-print">
         
         <div id="view-home" class="view-section">
-            
             <div class="home-grid">
-                
                 <div class="left-panel">
                     <div class="clock-widget">
                         <div id="clock-time" class="clock-time">00:00</div>
                         <div id="clock-date" class="clock-date">--</div>
                     </div>
-
                     <div class="d-flex flex-column">
-                        <button class="btn btn-success btn-tablet" id="btn-entrada" onclick="window.pontoController.selecionar('ENTRADA_TRABALHO', this)">
-                            <span>🟢 ENTRADA</span>
-                        </button>
-                        <button class="btn btn-warning text-dark btn-tablet" id="btn-almoco-ida" onclick="window.pontoController.selecionar('SAIDA_ALMOCO', this)">
-                            <span>🍽️ SAÍDA ALMOÇO</span>
-                        </button>
-                        <button class="btn btn-info text-white btn-tablet" id="btn-almoco-volta" onclick="window.pontoController.selecionar('RETORNO_ALMOCO', this)">
-                            <span>🔙 VOLTA ALMOÇO</span>
-                        </button>
-                        <button class="btn btn-danger btn-tablet" id="btn-saida" onclick="window.pontoController.selecionar('SAIDA_TRABALHO', this)">
-                            <span>🔴 SAÍDA</span>
-                        </button>
+                        <button class="btn btn-success btn-tablet" id="btn-entrada" onclick="window.pontoController.selecionar('ENTRADA_TRABALHO', this)"><span>🟢 ENTRADA</span></button>
+                        <button class="btn btn-warning text-dark btn-tablet" id="btn-almoco-ida" onclick="window.pontoController.selecionar('SAIDA_ALMOCO', this)"><span>🍽️ SAÍDA ALMOÇO</span></button>
+                        <button class="btn btn-info text-white btn-tablet" id="btn-almoco-volta" onclick="window.pontoController.selecionar('RETORNO_ALMOCO', this)"><span>🔙 VOLTA ALMOÇO</span></button>
+                        <button class="btn btn-danger btn-tablet" id="btn-saida" onclick="window.pontoController.selecionar('SAIDA_TRABALHO', this)"><span>🔴 SAÍDA</span></button>
                     </div>
                 </div>
-
                 <div class="right-panel">
                     <div class="scanner-wrapper">
                         <div id="qr-reader"></div>
-                        <div class="scanner-overlay" id="scanner-status">
-                            &larr; Selecione uma opção ao lado
-                        </div>
+                        <div class="scanner-overlay" id="scanner-status">&larr; Selecione uma opção ao lado</div>
                     </div>
                 </div>
-
             </div>
         </div>
 
-        <div id="capture-modal" class="photo-capture-modal hidden">
-            <h2 class="text-white fw-bold mb-4" id="capture-msg">Olá, Colaborador!</h2>
-            <div class="capture-video-container">
-                <video id="videoCapture" autoplay playsinline></video>
-            </div>
+        <div id="capture-modal" class="image-modal-overlay hidden">
+            <h2 class="text-white fw-bold mb-4" id="capture-msg">Olá!</h2>
+            <div class="capture-video-container"><video id="videoCapture" autoplay playsinline></video></div>
             <h1 class="text-white fw-bold mt-4" style="font-size: 4rem;" id="capture-countdown">3</h1>
-            <p class="text-white opacity-75">Tirando foto de comprovação...</p>
+            <p class="text-white opacity-75">Tirando foto...</p>
             <canvas id="canvasCapture" class="hidden"></canvas>
         </div>
 
         <div id="view-login" class="view-section hidden">
-            <div class="row justify-content-center mt-5"><div class="col-md-4"><div class="card shadow p-4">
-                <h4 class="text-center mb-4">Acesso RH</h4>
-                <input type="password" id="adminPass" class="form-control mb-3" placeholder="Senha (admin123)">
-                <button class="btn btn-dark w-100" onclick="window.adminController.login()">Entrar</button>
-            </div></div></div>
+            <div class="row justify-content-center mt-5"><div class="col-md-4"><div class="card shadow p-4"><h4 class="text-center mb-4">Acesso RH</h4><input type="password" id="adminPass" class="form-control mb-3" placeholder="Senha (admin123)"><button class="btn btn-dark w-100" onclick="window.adminController.login()">Entrar</button></div></div></div>
         </div>
 
         <div id="view-admin" class="view-section hidden">
@@ -229,32 +184,27 @@
                             </form>
                         </div>
                     </div>
-                    <div class="table-responsive bg-white rounded shadow-sm"><table class="table table-hover mb-0" id="tabela-colaboradores"><thead class="table-light"><tr><th>Foto</th><th>ID</th><th>Nome/Cargo</th><th>Status</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+                    <div class="table-responsive bg-white rounded shadow-sm">
+                        <table class="table table-hover mb-0 align-middle" id="tabela-colaboradores">
+                            <thead class="table-light"><tr><th style="width:50px">Foto</th><th>ID</th><th>Nome/Cargo</th><th>Status</th><th>Ações</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div class="tab-pane fade" id="pane-folha">
                     <div class="row mb-4 align-items-end">
-                        <div class="col-md-6">
-                            <label class="small fw-bold">Buscar e Selecionar:</label>
-                            <div class="input-group mb-2"><span class="input-group-text bg-white">🔍</span><input type="text" id="buscaFolha" class="form-control" placeholder="Nome, ID..." onkeyup="window.folhaController.filtrarSelect()"></div>
-                            <select id="selectFolhaFuncionario" class="form-select" onchange="window.folhaController.gerarFolha()"></select>
-                        </div>
-                        <div class="col-md-6 text-end align-self-end">
-                            <button id="btn-ferias" class="btn btn-warning me-2 hidden" onclick="window.folhaController.abrirModalFerias()">🏖️ Férias</button>
-                            <button class="btn btn-success" onclick="window.db.downloadCSV()">📥 Excel Geral</button>
-                        </div>
+                        <div class="col-md-6"><label class="small fw-bold">Buscar:</label><div class="input-group mb-2"><span class="input-group-text bg-white">🔍</span><input type="text" id="buscaFolha" class="form-control" placeholder="Nome..." onkeyup="window.folhaController.filtrarSelect()"></div><select id="selectFolhaFuncionario" class="form-select" onchange="window.folhaController.gerarFolha()"></select></div>
+                        <div class="col-md-6 text-end align-self-end"><button id="btn-ferias" class="btn btn-warning me-2 hidden" onclick="window.folhaController.abrirModalFerias()">🏖️ Férias</button><button class="btn btn-success" onclick="window.db.downloadCSV()">📥 Excel Geral</button></div>
                     </div>
                     <div id="area-resumo-individual" class="hidden">
-                        <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3 border">
-                            <div><h5 class="m-0 text-primary">📅 Folha de Ponto</h5><small id="status-ferias-display" class="text-danger fw-bold hidden"></small></div>
-                            <div><small class="text-muted d-block text-end">Saldo</small><h3 id="saldoTotalDisplay" class="m-0 text-end">--:--</h3></div>
-                        </div>
+                        <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3 border"><div><h5 class="m-0 text-primary">📅 Folha de Ponto</h5><small id="status-ferias-display" class="text-danger fw-bold hidden"></small></div><div><small class="text-muted d-block text-end">Saldo</small><h3 id="saldoTotalDisplay" class="m-0 text-end">--:--</h3></div></div>
                         <div class="table-responsive bg-white shadow-sm rounded"><table class="table table-striped table-bordered mb-0 align-middle" id="tabela-folha"><thead class="table-dark"><tr><th>Data</th><th>Registros</th><th>Trab.</th><th>Meta</th><th>Saldo</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
                     </div>
                 </div>
 
                 <div class="tab-pane fade" id="pane-cracha">
-                    <div class="row justify-content-center"><div class="col-md-6 mb-3"><select id="selectColaboradorQr" class="form-select mb-2"></select><button class="btn btn-primary w-100" onclick="window.adminController.gerarCracha()">🪪 Visualizar Crachá</button></div></div>
+                    <div class="row justify-content-center"><div class="col-md-6 mb-3"><select id="selectColaboradorQr" class="form-select mb-2"></select><button class="btn btn-primary w-100" onclick="window.adminController.gerarCracha()">🪪 Visualizar</button></div></div>
                     <div id="cracha-preview-area" class="text-center hidden mt-3"><div id="printable-area"><div class="id-card-container"><div class="id-card-header"><h3 class="fw-bold text-primary m-0">GCMN</h3><small>IDENTIFICAÇÃO</small></div><div class="id-card-body"><img id="card-foto" src="" class="id-card-photo"><h2 id="card-nome" class="id-card-name">NOME</h2><p id="card-cargo" class="id-card-role">CARGO</p><div class="id-card-info">ID: <strong id="card-id">00</strong> | Mat: <strong id="card-matricula">00</strong></div></div><div class="id-card-footer"><div id="card-qr"></div></div></div></div><button class="btn btn-dark mt-3 px-5 no-print" onclick="window.print()">Imprimir</button></div>
                 </div>
             </div>
@@ -263,7 +213,8 @@
 
     <div class="modal fade" id="modalEdicaoPonto" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-warning"><h5 class="modal-title">📝 Ajuste</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><h6 id="modal-data-titulo" class="fw-bold mb-3"></h6><div class="list-group mb-3" id="lista-registros-modal"></div><hr><h6>Novo:</h6><div class="row g-2"><div class="col-5"><select id="novo-tipo" class="form-select form-select-sm"><option value="ENTRADA_TRABALHO">🟢 Entrada</option><option value="SAIDA_ALMOCO">🍽️ Saída Almoço</option><option value="RETORNO_ALMOCO">🔙 Volta Almoço</option><option value="SAIDA_TRABALHO">🔴 Saída</option></select></div><div class="col-4"><input type="time" id="novo-horario" class="form-control form-select-sm"></div><div class="col-3"><button class="btn btn-success btn-sm w-100" onclick="window.folhaController.adicionarManual()">Add</button></div></div></div></div></div></div>
     <div class="modal fade" id="modalFerias" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-info text-white"><h5 class="modal-title">🏖️ Férias</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="row g-3"><div class="col-6"><label>Início</label><input type="date" id="feriasInicio" class="form-control"></div><div class="col-6"><label>Fim</label><input type="date" id="feriasFim" class="form-control"></div></div><div class="mt-3 text-end"><button class="btn btn-outline-danger me-2" onclick="window.folhaController.removerFerias()">Limpar</button><button class="btn btn-primary" onclick="window.folhaController.salvarFerias()">Salvar</button></div></div></div></div></div>
-    
+    <div id="modalVisualizacao" class="image-modal-overlay hidden" onclick="this.classList.add('hidden')"><img id="imgModalFull" class="image-modal-content" src=""></div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -365,136 +316,85 @@
             ui.loading(false);
         };
 
-        // --- PONTO CONTROLLER ---
+        // --- PONTO CONTROLLER (SCANNER HOME) ---
         window.pontoController = {
             scanner: null, dadosFuncionario: null, tipoSelecionado: null,
-            
             init: () => {
-                // Inicia scanner na tela inicial
                 window.pontoController.scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250, aspectRatio: 1.0 });
                 window.pontoController.scanner.render(window.pontoController.onScan, ()=>{});
             },
-
             selecionar: (tipo, btnElement) => {
-                // UI Feedback
                 document.querySelectorAll('.btn-tablet').forEach(b => b.classList.remove('selected'));
                 btnElement.classList.add('selected');
                 window.pontoController.tipoSelecionado = tipo;
-                
-                // Muda texto do status
-                const labels = {
-                    'ENTRADA_TRABALHO': 'Registrando: ENTRADA 🟢',
-                    'SAIDA_ALMOCO': 'Registrando: SAÍDA ALMOÇO 🍽️',
-                    'RETORNO_ALMOCO': 'Registrando: VOLTA ALMOÇO 🔙',
-                    'SAIDA_TRABALHO': 'Registrando: SAÍDA 🔴'
-                };
-                document.getElementById('scanner-status').innerText = `${labels[tipo]} - Aproxime o Crachá`;
-                document.getElementById('scanner-status').style.color = '#fff'; // Destaque
+                const labels = { 'ENTRADA_TRABALHO': '🟢 ENTRADA', 'SAIDA_ALMOCO': '🍽️ ALMOÇO', 'RETORNO_ALMOCO': '🔙 VOLTA', 'SAIDA_TRABALHO': '🔴 SAÍDA' };
+                const st = document.getElementById('scanner-status');
+                st.innerText = `${labels[tipo]} - Aproxime o Crachá`;
+                st.style.color = '#fff';
             },
-
             onScan: async (texto) => {
                 if (!window.pontoController.tipoSelecionado) {
-                    // Feedback visual se não tiver selecionado
-                    document.getElementById('scanner-status').innerText = "⚠️ SELECIONE UMA OPÇÃO PRIMEIRO!";
-                    document.getElementById('scanner-status').style.color = '#ffc107';
-                    return; // Ignora scan se não selecionou
+                    const st = document.getElementById('scanner-status');
+                    st.innerText = "⚠️ SELECIONE UMA OPÇÃO!";
+                    st.style.color = '#ffc107';
+                    return; 
                 }
-
-                // Pausa o scanner para processar
                 window.pontoController.scanner.pause();
-
                 let id = texto.includes(',') ? texto.split(',')[0] : texto; id = id.trim();
                 ui.loading(true, "Verificando...");
 
                 const s = await window.db.buscarPorId(id);
-                if(s.empty) { 
-                    ui.error("ID Não Encontrado!"); 
-                    setTimeout(() => window.pontoController.resetScan(), 2000); 
-                    return; 
-                }
-                
+                if(s.empty) { ui.error("ID Não Encontrado!"); setTimeout(() => window.pontoController.resetScan(), 2000); return; }
                 const d = s.docs[0].data();
                 
-                // VERIFICA FÉRIAS
                 const hoje = new Date().toISOString().split('T')[0];
                 if (d.feriasInicio && d.feriasFim && hoje >= d.feriasInicio && hoje <= d.feriasFim) {
                     ui.error("ACESSO BLOQUEADO", `Em férias até ${timeUtils.formatDate(d.feriasFim)}`);
                     setTimeout(() => window.pontoController.resetScan(), 3000);
                     return;
                 }
-
-                // VERIFICA DUPLICIDADE
                 const dup = await window.db.verificarDuplicidade(id, new Date().toLocaleDateString('pt-BR'), window.pontoController.tipoSelecionado);
-                if(dup) { 
-                    ui.error("Ação Duplicada!", "Já registrado hoje."); 
-                    setTimeout(() => window.pontoController.resetScan(), 3000); 
-                    return; 
-                }
+                if(dup) { ui.error("Ação Duplicada!", "Já registrado hoje."); setTimeout(() => window.pontoController.resetScan(), 3000); return; }
 
-                // Tudo OK -> Capturar Foto
                 window.pontoController.dadosFuncionario = d;
-                ui.reset(); // Tira loading
+                ui.reset();
                 window.pontoController.iniciarCapturaFoto();
             },
-
             resetScan: () => {
                 ui.reset();
-                // Limpa seleção
                 window.pontoController.tipoSelecionado = null;
                 document.querySelectorAll('.btn-tablet').forEach(b => b.classList.remove('selected'));
-                document.getElementById('scanner-status').innerText = "← Selecione uma opção ao lado";
+                document.getElementById('scanner-status').innerText = "← Selecione uma opção";
                 document.getElementById('scanner-status').style.color = 'white';
-                // Retoma scanner
                 try { window.pontoController.scanner.resume(); } catch(e){}
             },
-
             iniciarCapturaFoto: async () => {
                 const modal = document.getElementById('capture-modal');
                 const video = document.getElementById('videoCapture');
                 const msg = document.getElementById('capture-msg');
                 const count = document.getElementById('capture-countdown');
-                
                 msg.innerText = `Olá, ${window.pontoController.dadosFuncionario.nome.split(' ')[0]}!`;
                 modal.classList.remove('hidden');
-
                 try {
-                    // Para o scanner para liberar a câmera (no mobile pode dar conflito)
-                    // No desktop funciona, mas vamos garantir.
-                    // Nota: Html5QrcodeScanner não libera fácil, mas pause() ajuda.
-                    
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                     video.srcObject = stream;
-                    
-                    let c = 3;
-                    count.innerText = c;
-                    
+                    let c = 3; count.innerText = c;
                     const interval = setInterval(() => {
-                        c--;
-                        if(c > 0) count.innerText = c;
+                        c--; if(c > 0) count.innerText = c;
                         else {
                             clearInterval(interval);
                             count.innerText = "📸";
-                            // Tira foto
                             const canvas = document.getElementById('canvasCapture');
                             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
                             canvas.getContext('2d').drawImage(video, 0, 0);
                             const foto = canvas.toDataURL('image/jpeg', 0.5);
-                            
-                            // Para vídeo
                             stream.getTracks().forEach(t => t.stop());
                             modal.classList.add('hidden');
-                            
                             window.pontoController.salvarPonto(foto);
                         }
                     }, 1000);
-
-                } catch(e) { 
-                    alert("Erro na câmera: " + e.message); 
-                    modal.classList.add('hidden');
-                    window.pontoController.resetScan();
-                }
+                } catch(e) { alert("Câmera erro: " + e.message); modal.classList.add('hidden'); window.pontoController.resetScan(); }
             },
-
             salvarPonto: async (foto) => {
                 ui.loading(true, "Salvando...");
                 const now = new Date();
@@ -508,13 +408,12 @@
                     dataStr: now.toLocaleDateString('pt-BR'),
                     horaStr: now.toLocaleTimeString('pt-BR')
                 });
-                
-                ui.success("Registrado com Sucesso!");
+                ui.success("Registrado!");
                 setTimeout(() => window.pontoController.resetScan(), 2000);
             }
         };
 
-        // --- FOLHA & ADMIN (MANTIDOS IGUAIS AO ANTERIOR, SÓ RECONECTANDO) ---
+        // --- FOLHA & ADMIN ---
         window.folhaController = {
             cacheFuncionarios: [], cachePontosDia: [], funcSelecionado: null, cacheTodosPontos: [],
             carregarSelect: async () => {
@@ -533,16 +432,12 @@
             },
             atualizarOpcoesSelect: (lista) => {
                 const sel = document.getElementById('selectFolhaFuncionario');
-                sel.innerHTML = '<option value="">Selecione um funcionário...</option>';
+                sel.innerHTML = '<option value="">Selecione...</option>';
                 lista.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nome} (ID: ${c.id})</option>`);
             },
             gerarFolha: async () => {
                 const id = document.getElementById('selectFolhaFuncionario').value;
-                if(!id) { 
-                    document.getElementById('area-resumo-individual').classList.add('hidden'); 
-                    document.getElementById('btn-ferias').classList.add('hidden');
-                    return; 
-                }
+                if(!id) { document.getElementById('area-resumo-individual').classList.add('hidden'); document.getElementById('btn-ferias').classList.add('hidden'); return; }
                 ui.loading(true);
                 try {
                     let func = window.folhaController.cacheFuncionarios.find(f => f.id === id);
@@ -578,36 +473,27 @@
                             let corBadge = r.tipo.includes('ENTRADA') ? 'bg-success' : (r.tipo.includes('SAIDA') ? 'bg-danger' : 'bg-warning text-dark');
                             return `<div class="registro-item">${imgHtml}<span class="badge ${corBadge}">${r.horaStr}</span></div>`;
                         }).join('');
-                        
                         let trab = 0; let entrada = null;
                         regs.forEach(r => {
                             const m = timeUtils.timeToMin(r.horaStr);
                             if(r.tipo.includes("ENTRADA")) entrada = m;
                             else if(r.tipo.includes("SAIDA") && entrada !== null) { trab += (m - entrada); entrada = null; }
                         });
-
                         const [dd,mm,yyyy] = data.split('/');
                         const wd = new Date(`${yyyy}-${mm}-${dd}`).getDay();
                         let meta = escalaDias.includes(String(wd)) ? cargaMin : 0;
                         const saldo = trab - meta;
                         saldoAcum += saldo;
-                        
                         let stt = "OK";
-                        if(trab===0 && meta>0) stt="Falta";
-                        else if(saldo < 0 && meta>0) stt="Devendo";
-                        else if(saldo > 0) stt="Extra";
-
+                        if(trab===0 && meta>0) stt="Falta"; else if(saldo < 0 && meta>0) stt="Devendo"; else if(saldo > 0) stt="Extra";
                         tbody.innerHTML += `<tr><td>${data}</td><td>${regsStr}</td><td>${timeUtils.minToTime(trab)}</td><td>${timeUtils.minToTime(meta)}</td><td class="${saldo>=0?'balance-positive':'balance-negative'}">${timeUtils.minToTime(saldo)}</td><td><button class="btn btn-sm btn-outline-warning" onclick="window.folhaController.abrirModalEdicao('${data}')">📝</button></td></tr>`;
                     });
-
                     const el = document.getElementById('saldoTotalDisplay');
                     el.innerText = timeUtils.minToTime(saldoAcum);
                     el.className = saldoAcum >= 0 ? "m-0 text-success fw-bold text-end" : "m-0 text-danger fw-bold text-end";
                     document.getElementById('area-resumo-individual').classList.remove('hidden');
                 } catch (error) { alert("Erro: " + error.message); } finally { ui.loading(false); }
             },
-            
-            // --- CONTROLE DE FÉRIAS ---
             abrirModalFerias: () => {
                 const func = window.folhaController.funcSelecionado;
                 if(func.feriasInicio) document.getElementById('feriasInicio').value = func.feriasInicio;
@@ -617,8 +503,8 @@
             salvarFerias: async () => {
                 const ini = document.getElementById('feriasInicio').value;
                 const fim = document.getElementById('feriasFim').value;
-                if(!ini || !fim) return alert("Preencha ambas as datas.");
-                if(ini > fim) return alert("Erro nas datas.");
+                if(!ini || !fim) return alert("Datas?");
+                if(ini > fim) return alert("Erro data.");
                 ui.loading(true);
                 await window.db.editarColaborador(window.folhaController.funcSelecionado.docId, { feriasInicio: ini, feriasFim: fim });
                 window.folhaController.funcSelecionado.feriasInicio = ini;
@@ -628,7 +514,7 @@
                 ui.loading(false);
             },
             removerFerias: async () => {
-                if(!confirm("Remover férias?")) return;
+                if(!confirm("Remover?")) return;
                 ui.loading(true);
                 await window.db.editarColaborador(window.folhaController.funcSelecionado.docId, { feriasInicio: null, feriasFim: null });
                 window.folhaController.funcSelecionado.feriasInicio = null;
@@ -637,7 +523,6 @@
                 window.folhaController.gerarFolha();
                 ui.loading(false);
             },
-
             abrirModalEdicao: (dataStr) => {
                 window.folhaController.diaSelecionado = dataStr;
                 document.getElementById('modal-data-titulo').innerText = `Registros de ${dataStr}`;
@@ -739,11 +624,7 @@
             navegar: (v) => { 
                 document.querySelectorAll('.view-section').forEach(e=>e.classList.add('hidden')); 
                 document.getElementById('view-'+v).classList.remove('hidden'); 
-                if(v === 'home') {
-                    // Inicializa scanner apenas na primeira vez
-                    if(!window.pontoController.scanner) window.pontoController.init();
-                    else window.pontoController.resetScan();
-                }
+                if(v === 'home') { if(!window.pontoController.scanner) window.pontoController.init(); else window.pontoController.resetScan(); }
                 if(v==='admin') window.adminController.carregarLista(); 
             },
             verificarAdmin: () => sessionStorage.getItem('admin_logado') ? window.app.navegar('admin') : window.app.navegar('login'),
