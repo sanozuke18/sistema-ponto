@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ponto System - GCMN (Com Fotos)</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        .hidden { display: none !important; }
+        
+        /* BANNER TESTE */
+        .test-mode-banner { background-color: #ffc107; color: #000; text-align: center; font-weight: bold; padding: 5px; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; }
+        body.testing-mode { padding-top: 35px; }
+
+        /* UI Elements */
+        .camera-container { position: relative; width: 100%; max-width: 600px; margin: auto; overflow: hidden; border-radius: 12px; background: #000; }
+        #videoElement { width: 100%; transform: scaleX(-1); }
+        .btn-tablet { height: 120px; font-size: 1.4rem; font-weight: bold; display: flex; align-items: center; justify-content: center; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.1s; }
+        .btn-tablet:active { transform: scale(0.98); }
+        .clock-container { margin-bottom: 30px; padding: 20px; background: white; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-left: 5px solid #0d6efd; }
+        .clock-time { font-size: 4rem; font-weight: 800; color: #212529; line-height: 1; letter-spacing: -2px; }
+        
+        /* FOTOS E MINIATURAS (LAYOUT ANTIGO RESTAURADO NA TABELA) */
+        .profile-thumb-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        
+        /* Miniatura na tabela de ponto */
+        .evidence-thumb { 
+            width: 45px; height: 45px; 
+            object-fit: cover; 
+            border-radius: 6px; 
+            border: 2px solid #dee2e6; 
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: block;
+            margin: 0 auto 4px auto;
+        }
+        .evidence-thumb:hover { transform: scale(1.5); border-color: #0d6efd; z-index: 10; position: relative; }
+        .registro-item { display: inline-block; margin-right: 8px; text-align: center; vertical-align: top; }
+
+        /* Saldo */
+        .balance-positive { color: green; font-weight: bold; }
+        .balance-negative { color: red; font-weight: bold; }
+        
+        /* Loading */
+        .loading-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.98); z-index:9999; display:flex; justify-content:center; align-items:center; flex-direction: column; }
+        
+        /* Modal Foto Full */
+        .image-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; display: flex; justify-content: center; align-items: center; }
+        .image-modal-content { max-width: 95%; max-height: 90vh; border: 3px solid white; border-radius: 8px; }
+
+        /* Crachá Impressão */
+        .id-card-container { width: 300px; height: 500px; background: #fff; border: 1px solid #ddd; border-radius: 8px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .id-card-header { width: 100%; border-bottom: 2px solid #0d6efd; text-align: center; padding-bottom: 10px; margin-bottom: 20px; }
+        .id-card-photo { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid #0d6efd; margin-bottom: 15px; }
+        .id-card-name { font-size: 1.4rem; font-weight: 800; text-align: center; line-height: 1.2; }
+        .id-card-role { color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 15px; }
+
+        @media print {
+            @page { size: auto; margin: 0mm; }
+            body * { visibility: hidden; }
+            .test-mode-banner, .modal { display: none !important; }
+            #printable-area, #printable-area * { visibility: visible; }
+            #printable-area { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; }
+            .id-card-container { width: 60mm !important; height: 100mm !important; border: none !important; padding: 5mm !important; justify-content: space-between !important; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="test-banner" class="test-mode-banner hidden">⚠️ MODO DE TESTE ATIVADO</div>
+
+    <div id="status-overlay" class="loading-overlay hidden">
+        <div class="spinner-border text-primary mb-3" role="status" style="width: 4rem; height: 4rem;"></div>
+        <h2 id="status-text" class="text-muted">Carregando...</h2>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4 px-3 shadow no-print">
+        <div class="container-fluid">
+            <span class="navbar-brand fw-bold">☁️ Ponto System GCMN</span>
+            <div class="d-flex">
+                <button class="btn btn-outline-light btn-sm me-2" onclick="window.app.navegar('home')">🏠 Tablet</button>
+                <button class="btn btn-warning btn-sm text-dark" onclick="window.app.verificarAdmin()">⚙️ Gestão RH</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container no-print">
+        
+        <div id="view-home" class="view-section">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="clock-container text-center">
+                        <div id="clock-time" class="clock-time">00:00:00</div>
+                        <div id="clock-date" class="clock-date">--</div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6"><button class="btn btn-success w-100 btn-tablet" onclick="window.pontoController.selecionarTipo('ENTRADA_TRABALHO')">🟢 ENTRADA</button></div>
+                        <div class="col-md-6"><button class="btn btn-warning w-100 btn-tablet text-dark" onclick="window.pontoController.selecionarTipo('SAIDA_ALMOCO')">🍽️ ALMOÇO (IDA)</button></div>
+                        <div class="col-md-6"><button class="btn btn-info w-100 btn-tablet text-white" onclick="window.pontoController.selecionarTipo('RETORNO_ALMOCO')">🔙 ALMOÇO (VOLTA)</button></div>
+                        <div class="col-md-6"><button class="btn btn-danger w-100 btn-tablet" onclick="window.pontoController.selecionarTipo('SAIDA_TRABALHO')">🔴 SAÍDA</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-registro" class="view-section hidden">
+            <div class="row justify-content-center">
+                <div class="col-md-8 text-center">
+                    <div class="card shadow border-0">
+                        <div class="card-header bg-primary text-white py-3"><h4 class="m-0">Registrando...</h4></div>
+                        <div class="card-body p-4">
+                            <div id="step-qr">
+                                <p class="lead">Aproxime o Crachá</p>
+                                <div id="qr-reader" class="mb-3 rounded border"></div>
+                                <button class="btn btn-secondary" onclick="window.pontoController.cancelar()">Cancelar</button>
+                            </div>
+                            <div id="step-foto" class="hidden">
+                                <h5 id="msg-ola" class="text-success fw-bold mb-3">Olá!</h5>
+                                <div class="camera-container">
+                                    <video id="videoElement" autoplay playsinline></video>
+                                    <canvas id="canvasElement" class="hidden"></canvas>
+                                </div>
+                                <p class="text-muted mt-2">Foto em 3s...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-login" class="view-section hidden">
+            <div class="row justify-content-center"><div class="col-md-4"><div class="card shadow p-4 mt-5">
+                <h4 class="text-center mb-4">Acesso RH</h4>
+                <input type="password" id="adminPass" class="form-control mb-3" placeholder="Senha (admin123)">
+                <button class="btn btn-dark w-100" onclick="window.adminController.login()">Entrar</button>
+            </div></div></div>
+        </div>
+
+        <div id="view-admin" class="view-section hidden">
+            <div class="alert alert-warning d-flex justify-content-between py-2 align-items-center">
+                <span class="small fw-bold">Ambiente de Desenvolvimento</span>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="toggleTestMode" onchange="window.app.toggleTestMode()">
+                    <label class="form-check-label small" for="toggleTestMode">Ativar Modo Teste</label>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
+                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#pane-funcionarios">👥 Cadastro</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-folha" onclick="window.folhaController.carregarSelect()">📅 Folha de Ponto</button></li>
+                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#pane-cracha">🆔 Crachás</button></li>
+            </ul>
+            
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="pane-funcionarios">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header bg-white fw-bold text-primary">Funcionário</div>
+                        <div class="card-body bg-light">
+                            <form id="formColaborador" onsubmit="event.preventDefault(); window.adminController.salvarColaborador();">
+                                <input type="hidden" id="editDocId">
+                                <div class="row g-3">
+                                    <div class="col-md-2"><label class="small">ID</label><input type="text" id="cadId" class="form-control" required></div>
+                                    <div class="col-md-2"><label class="small">Matrícula</label><input type="text" id="cadMatricula" class="form-control" required></div>
+                                    <div class="col-md-4"><label class="small">Nome</label><input type="text" id="cadNome" class="form-control" required></div>
+                                    <div class="col-md-4"><label class="small">Cargo</label><input type="text" id="cadCargo" class="form-control" required></div>
+                                    <div class="col-12"><h6 class="border-bottom pb-2 mt-2">Configuração de Escala</h6></div>
+                                    <div class="col-md-3"><label class="small">Horas/Dia</label><input type="number" id="escalaHoras" class="form-control" value="8" min="1"></div>
+                                    <div class="col-md-9">
+                                        <label class="small d-block">Dias Trabalhados</label>
+                                        <div class="btn-group" role="group">
+                                            <input type="checkbox" class="btn-check" id="dia_1" value="1" checked><label class="btn btn-outline-secondary btn-sm" for="dia_1">Seg</label>
+                                            <input type="checkbox" class="btn-check" id="dia_2" value="2" checked><label class="btn btn-outline-secondary btn-sm" for="dia_2">Ter</label>
+                                            <input type="checkbox" class="btn-check" id="dia_3" value="3" checked><label class="btn btn-outline-secondary btn-sm" for="dia_3">Qua</label>
+                                            <input type="checkbox" class="btn-check" id="dia_4" value="4" checked><label class="btn btn-outline-secondary btn-sm" for="dia_4">Qui</label>
+                                            <input type="checkbox" class="btn-check" id="dia_5" value="5" checked><label class="btn btn-outline-secondary btn-sm" for="dia_5">Sex</label>
+                                            <input type="checkbox" class="btn-check" id="dia_6" value="6"><label class="btn btn-outline-secondary btn-sm" for="dia_6">Sáb</label>
+                                            <input type="checkbox" class="btn-check" id="dia_0" value="0"><label class="btn btn-outline-secondary btn-sm" for="dia_0">Dom</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6"><label class="small">Foto</label><input type="file" id="cadFoto" class="form-control"></div>
+                                    <div class="col-md-6 text-end align-self-end">
+                                        <button type="button" class="btn btn-secondary me-2 hidden" id="btn-cancel-edit" onclick="window.adminController.resetForm()">Cancelar</button>
+                                        <button type="submit" class="btn btn-success" id="btn-salvar">Salvar</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="table-responsive bg-white rounded shadow-sm"><table class="table table-hover mb-0" id="tabela-colaboradores"><thead class="table-light"><tr><th>Foto</th><th>ID</th><th>Nome/Cargo</th><th>Escala</th><th>Ações</th></tr></thead><tbody></tbody></table></div>
+                </div>
+
+                <div class="tab-pane fade" id="pane-folha">
+                    <div class="row mb-4 align-items-end">
+                        <div class="col-md-5">
+                            <label class="small fw-bold">Visualizar Individual:</label>
+                            <select id="selectFolhaFuncionario" class="form-select" onchange="window.folhaController.gerarFolha()"></select>
+                        </div>
+                        <div class="col-md-7 text-end">
+                            <button class="btn btn-success" onclick="window.db.downloadCSV()">📥 Baixar Excel Completo</button>
+                        </div>
+                    </div>
+                    <div id="area-resumo-individual" class="hidden">
+                        <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded mb-3 border">
+                            <h5 class="m-0 text-primary">📅 Folha de Ponto</h5>
+                            <div><small class="text-muted d-block text-end">Saldo</small><h3 id="saldoTotalDisplay" class="m-0 text-end">--:--</h3></div>
+                        </div>
+                        <div class="table-responsive bg-white shadow-sm rounded">
+                            <table class="table table-striped table-bordered mb-0 align-middle" id="tabela-folha">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th style="width: 15%">Data</th>
+                                        <th style="width: 45%">Registros (Fotos e Horários)</th>
+                                        <th>Trab.</th>
+                                        <th>Meta</th>
+                                        <th>Saldo</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="pane-cracha">
+                    <div class="row justify-content-center">
+                        <div class="col-md-6 mb-3">
+                            <select id="selectColaboradorQr" class="form-select mb-2"></select>
+                            <button class="btn btn-primary w-100" onclick="window.adminController.gerarCracha()">🪪 Visualizar Crachá</button>
+                        </div>
+                    </div>
+                    <div id="cracha-preview-area" class="text-center hidden mt-3">
+                        <div id="printable-area">
+                            <div class="id-card-container">
+                                <div class="id-card-header"><h3 class="fw-bold text-primary m-0">GCMN</h3><small>IDENTIFICAÇÃO</small></div>
+                                <div class="id-card-body">
+                                    <img id="card-foto" src="" class="id-card-photo"><h2 id="card-nome" class="id-card-name">NOME</h2><p id="card-cargo" class="id-card-role">CARGO</p>
+                                    <div class="id-card-info">ID: <strong id="card-id">00</strong> | Mat: <strong id="card-matricula">00</strong></div>
+                                </div>
+                                <div class="id-card-footer"><div id="card-qr"></div></div>
+                            </div>
+                        </div>
+                        <button class="btn btn-dark mt-3 px-5 no-print" onclick="window.print()">Imprimir</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEdicaoPonto" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title">📝 Ajuste Manual</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6 id="modal-data-titulo" class="fw-bold mb-3"></h6>
+                    <div class="list-group mb-3" id="lista-registros-modal"></div>
+                    <hr>
+                    <h6>Novo Registro:</h6>
+                    <div class="row g-2">
+                        <div class="col-5">
+                            <select id="novo-tipo" class="form-select form-select-sm">
+                                <option value="ENTRADA_TRABALHO">🟢 Entrada</option>
+                                <option value="SAIDA_ALMOCO">🍽️ Saída Almoço</option>
+                                <option value="RETORNO_ALMOCO">🔙 Volta Almoço</option>
+                                <option value="SAIDA_TRABALHO">🔴 Saída</option>
+                            </select>
+                        </div>
+                        <div class="col-4"><input type="time" id="novo-horario" class="form-control form-select-sm"></div>
+                        <div class="col-3"><button class="btn btn-success btn-sm w-100" onclick="window.folhaController.adicionarManual()">Add</button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalVisualizacao" class="image-modal-overlay hidden" onclick="this.classList.add('hidden')"><img id="imgModalFull" class="image-modal-content" src=""></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, deleteDoc, updateDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwn1__HFYBB8LKbkub7cZDIR8StmZrldE",
+            authDomain: "pontoweb-bf0f5.firebaseapp.com",
+            projectId: "pontoweb-bf0f5",
+            storageBucket: "pontoweb-bf0f5.firebasestorage.app",
+            messagingSenderId: "1002856327838",
+            appId: "1:1002856327838:web:059d818589782901e3e98f"
+        };
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const firestore = getFirestore(firebaseApp);
+
+        // --- HELPERS ---
+        const timeUtils = {
+            minToTime: (m) => { const s=m<0?"-":""; m=Math.abs(m); return `${s}${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; },
+            timeToMin: (t) => { const[h,m]=t.split(':').map(Number); return (h*60)+m; }
+        };
+        const ui = {
+            loading: (show) => document.getElementById('status-overlay').classList.toggle('hidden', !show),
+            compressImage: (file) => new Promise((resolve) => {
+                const r = new FileReader(); r.readAsDataURL(file);
+                r.onload = (e) => { const i=new Image(); i.src=e.target.result; i.onload=()=>{ const c=document.createElement('canvas'); const x=c.getContext('2d'); const s=300/i.width; c.width=300; c.height=i.height*s; x.drawImage(i,0,0,c.width,c.height); resolve(c.toDataURL('image/jpeg',0.7)); } }
+            })
+        };
+
+        // --- DB ---
+        window.db = {
+            buscarPorId: async (id) => getDocs(query(collection(firestore, "colaboradores"), where("id", "==", id))),
+            verificarDuplicidade: async (id, dataStr, tipo) => {
+                if(window.app.isTestMode()) return false;
+                const s = await getDocs(query(collection(firestore, "pontos"), where("id", "==", id), where("dataStr", "==", dataStr)));
+                return s.docs.some(d => d.data().tipo === tipo);
+            },
+            adicionarColaborador: async (d) => addDoc(collection(firestore, "colaboradores"), { ...d, dataCadastro: new Date().toISOString() }),
+            editarColaborador: async (id, d) => updateDoc(doc(firestore, "colaboradores", id), d),
+            deletarColaborador: async (id) => deleteDoc(doc(firestore, "colaboradores", id)),
+            listarColaboradores: async () => { const s = await getDocs(collection(firestore, "colaboradores")); return s.docs.map(d => ({ docId: d.id, ...d.data() })); },
+            registrarPonto: async (d) => addDoc(collection(firestore, "pontos"), d),
+            getPontosFuncionario: async (id) => { 
+                const s = await getDocs(query(collection(firestore, "pontos"), where("id", "==", id))); 
+                const dados = s.docs.map(d => ({ docId: d.id, ...d.data() }));
+                return dados.sort((a,b) => {
+                    const tA = a.timestamp && a.timestamp.seconds ? a.timestamp.seconds : new Date(a.timestamp).getTime();
+                    const tB = b.timestamp && b.timestamp.seconds ? b.timestamp.seconds : new Date(b.timestamp).getTime();
+                    return tA - tB;
+                });
+            },
+            getTodosPontos: async () => { const s = await getDocs(collection(firestore, "pontos")); return s.docs.map(d => d.data()); },
+            deletarPonto: async (docId) => deleteDoc(doc(firestore, "pontos", docId)),
+            atualizarPonto: async (docId, dados) => updateDoc(doc(firestore, "pontos", docId), dados)
+        };
+
+        window.db.downloadCSV = async () => {
+            ui.loading(true);
+            try {
+                const colabs = await window.db.listarColaboradores();
+                const colabMap = {}; colabs.forEach(c => colabMap[c.id] = c);
+                const dados = await window.db.getTodosPontos();
+                dados.sort((a,b) => (a.timestamp.seconds || 0) - (b.timestamp.seconds || 0));
+                let csv = "data:text/csv;charset=utf-8,Data;Hora;ID;Matricula;Nome;Cargo;Tipo_Registro\n";
+                dados.forEach(r => {
+                    const info = colabMap[r.id] || {};
+                    csv += `${r.dataStr};${r.horaStr};${r.id};${info.matricula||r.matricula||'-'};${r.nome};${info.cargo||r.cargo||'-'};${r.tipo}\n`;
+                });
+                const link = document.createElement("a"); link.href = encodeURI(csv); link.download = "relatorio_geral.csv"; link.click();
+            } catch(e) { alert("Erro: " + e.message); }
+            ui.loading(false);
+        };
+
+        // --- PONTO ---
+        window.pontoController = {
+            scanner: null, dadosFuncionario: null, tipoSelecionado: null,
+            selecionarTipo: (t) => { window.pontoController.tipoSelecionado = t; window.app.navegar('registro'); window.pontoController.iniciarScanner(); },
+            iniciarScanner: () => {
+                document.getElementById('step-qr').classList.remove('hidden'); document.getElementById('step-foto').classList.add('hidden');
+                if(!window.pontoController.scanner) { window.pontoController.scanner = new Html5QrcodeScanner("qr-reader", { fps: 10, qrbox: 250 }); window.pontoController.scanner.render(window.pontoController.onScan, ()=>{}); }
+            },
+            cancelar: () => { if(window.pontoController.scanner) window.pontoController.scanner.clear(); window.app.navegar('home'); },
+            onScan: async (t) => {
+                window.pontoController.scanner.clear(); window.pontoController.scanner = null; document.getElementById('qr-reader').innerHTML = "";
+                let id = t.includes(',') ? t.split(',')[0] : t; id = id.trim();
+                ui.loading(true);
+                const s = await window.db.buscarPorId(id);
+                if(s.empty) { ui.loading(false); alert("ID não encontrado"); window.app.navegar('home'); return; }
+                const dup = await window.db.verificarDuplicidade(id, new Date().toLocaleDateString('pt-BR'), window.pontoController.tipoSelecionado);
+                if(dup) { ui.loading(false); alert("Já registrado hoje!"); window.app.navegar('home'); return; }
+                window.pontoController.dadosFuncionario = s.docs[0].data();
+                document.getElementById('msg-ola').innerText = `Olá, ${window.pontoController.dadosFuncionario.nome}`;
+                ui.loading(false);
+                document.getElementById('step-qr').classList.add('hidden'); document.getElementById('step-foto').classList.remove('hidden');
+                setTimeout(window.pontoController.iniciarCamera, 500);
+            },
+            iniciarCamera: async () => {
+                const vid = document.getElementById('videoElement');
+                try {
+                    const stm = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                    vid.srcObject = stm;
+                    let c = 3; const i = setInterval(() => { c--; if(c<=0) { clearInterval(i); window.pontoController.salvar(); } }, 1000);
+                } catch(e) { alert("Câmera erro"); }
+            },
+            salvar: async () => {
+                ui.loading(true);
+                const vid = document.getElementById('videoElement'); const cvs = document.getElementById('canvasElement');
+                cvs.width = vid.videoWidth; cvs.height = vid.videoHeight;
+                cvs.getContext('2d').drawImage(vid, 0, 0);
+                const foto = cvs.toDataURL('image/jpeg', 0.5);
+                vid.srcObject.getTracks().forEach(t => t.stop());
+                const now = new Date();
+                await window.db.registrarPonto({
+                    id: window.pontoController.dadosFuncionario.id,
+                    nome: window.pontoController.dadosFuncionario.nome,
+                    cargo: window.pontoController.dadosFuncionario.cargo,
+                    tipo: window.pontoController.tipoSelecionado,
+                    foto: foto,
+                    timestamp: now,
+                    dataStr: now.toLocaleDateString('pt-BR'),
+                    horaStr: now.toLocaleTimeString('pt-BR')
+                });
+                ui.loading(false); alert("Registrado!"); window.app.navegar('home');
+            }
+        };
+
+        // --- FOLHA INDIVIDUAL (COM FOTOS RESTAURADAS) ---
+        window.folhaController = {
+            cacheFuncionarios: [], cachePontosDia: [], funcSelecionado: null, cacheTodosPontos: [],
+            carregarSelect: async () => {
+                ui.loading(true);
+                try {
+                    const cols = await window.db.listarColaboradores();
+                    window.folhaController.cacheFuncionarios = cols;
+                    const sel = document.getElementById('selectFolhaFuncionario');
+                    sel.innerHTML = '<option value="">Selecione...</option>';
+                    cols.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.nome}</option>`);
+                } catch (e) { alert(e.message); }
+                ui.loading(false);
+            },
+            gerarFolha: async () => {
+                const id = document.getElementById('selectFolhaFuncionario').value;
+                if(!id) { document.getElementById('area-resumo-individual').classList.add('hidden'); return; }
+                ui.loading(true);
+                try {
+                    let func = window.folhaController.cacheFuncionarios.find(f => f.id === id);
+                    if (!func) { const snap = await window.db.buscarPorId(id); if (!snap.empty) func = snap.docs[0].data(); }
+                    window.folhaController.funcSelecionado = func;
+                    
+                    const escalaDias = func.escalaDias || ["1","2","3","4","5"];
+                    const cargaMin = (func.escalaHoras || 8) * 60;
+                    const pontos = await window.db.getPontosFuncionario(id);
+                    window.folhaController.cacheTodosPontos = pontos;
+                    
+                    const dias = {};
+                    pontos.forEach(p => { if(!dias[p.dataStr]) dias[p.dataStr]=[]; dias[p.dataStr].push(p); });
+
+                    const tbody = document.querySelector('#tabela-folha tbody'); tbody.innerHTML = '';
+                    let saldoAcum = 0;
+
+                    Object.keys(dias).sort((a,b) => {
+                        const [da,ma,ya]=a.split('/'); const [db,mb,yb]=b.split('/');
+                        return new Date(`${ya}-${ma}-${da}`) - new Date(`${yb}-${mb}-${db}`);
+                    }).forEach(data => {
+                        const regs = dias[data];
+                        
+                        // GERADOR DE HTML COM FOTOS
+                        const regsStr = regs.map(r => {
+                            let imgHtml = "";
+                            if(r.foto) {
+                                // Miniatura clicável
+                                imgHtml = `<img src="${r.foto}" class="evidence-thumb" onclick="document.getElementById('imgModalFull').src = this.src; document.getElementById('modalVisualizacao').classList.remove('hidden');" title="Ver Foto">`;
+                            } else {
+                                imgHtml = `<div class="evidence-thumb bg-secondary text-white d-flex align-items-center justify-content-center" style="font-size:10px">S/F</div>`;
+                            }
+                            
+                            let corBadge = 'bg-secondary';
+                            if(r.tipo.includes('ENTRADA')) corBadge = 'bg-success';
+                            if(r.tipo.includes('SAIDA')) corBadge = 'bg-danger';
+                            if(r.tipo.includes('ALMOCO')) corBadge = 'bg-warning text-dark';
+
+                            return `<div class="registro-item">
+                                        ${imgHtml}
+                                        <span class="badge ${corBadge}">${r.horaStr}</span>
+                                    </div>`;
+                        }).join('');
+                        
+                        // Cálculo
+                        let trab = 0; let entrada = null;
+                        regs.forEach(r => {
+                            const m = timeUtils.timeToMin(r.horaStr);
+                            if(r.tipo.includes("ENTRADA")) entrada = m;
+                            else if(r.tipo.includes("SAIDA") && entrada !== null) { trab += (m - entrada); entrada = null; }
+                        });
+
+                        const [dd,mm,yyyy] = data.split('/');
+                        const wd = new Date(`${yyyy}-${mm}-${dd}`).getDay();
+                        let meta = escalaDias.includes(String(wd)) ? cargaMin : 0;
+                        const saldo = trab - meta;
+                        saldoAcum += saldo;
+                        
+                        let stt = "OK";
+                        if(trab===0 && meta>0) stt="Falta";
+                        else if(saldo < 0 && meta>0) stt="Devendo";
+                        else if(saldo > 0) stt="Extra";
+
+                        tbody.innerHTML += `<tr>
+                            <td>${data}</td>
+                            <td>${regsStr}</td>
+                            <td>${timeUtils.minToTime(trab)}</td>
+                            <td>${timeUtils.minToTime(meta)}</td>
+                            <td class="${saldo>=0?'balance-positive':'balance-negative'}">${timeUtils.minToTime(saldo)}</td>
+                            <td>${stt}</td>
+                            <td><button class="btn btn-sm btn-outline-warning" onclick="window.folhaController.abrirModalEdicao('${data}')">📝</button></td>
+                        </tr>`;
+                    });
+
+                    const el = document.getElementById('saldoTotalDisplay');
+                    el.innerText = timeUtils.minToTime(saldoAcum);
+                    el.className = saldoAcum >= 0 ? "m-0 text-success fw-bold text-end" : "m-0 text-danger fw-bold text-end";
+                    document.getElementById('area-resumo-individual').classList.remove('hidden');
+                } catch (error) { alert("Erro: " + error.message); } finally { ui.loading(false); }
+            },
+            abrirModalEdicao: (dataStr) => {
+                window.folhaController.diaSelecionado = dataStr;
+                document.getElementById('modal-data-titulo').innerText = `Registros de ${dataStr}`;
+                const pontosDia = window.folhaController.cacheTodosPontos.filter(p => p.dataStr === dataStr);
+                const listEl = document.getElementById('lista-registros-modal');
+                listEl.innerHTML = pontosDia.length === 0 ? "<p class='text-muted small'>Vazio</p>" : "";
+                pontosDia.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = "list-group-item d-flex justify-content-between align-items-center";
+                    item.innerHTML = `<div><strong>${p.horaStr}</strong> <small>(${p.tipo})</small></div><button class="btn btn-sm btn-danger" onclick="window.folhaController.deletarRegistro('${p.docId}')">🗑️</button>`;
+                    listEl.appendChild(item);
+                });
+                new bootstrap.Modal(document.getElementById('modalEdicaoPonto')).show();
+            },
+            deletarRegistro: async (docId) => {
+                if(!confirm("Excluir?")) return;
+                ui.loading(true);
+                await window.db.deletarPonto(docId);
+                bootstrap.Modal.getInstance(document.getElementById('modalEdicaoPonto')).hide();
+                await window.folhaController.gerarFolha();
+            },
+            adicionarManual: async () => {
+                const tipo = document.getElementById('novo-tipo').value;
+                const hora = document.getElementById('novo-horario').value;
+                if(!hora) return alert("Horário?");
+                ui.loading(true);
+                const [dd, mm, yyyy] = window.folhaController.diaSelecionado.split('/');
+                const [hh, min] = hora.split(':');
+                const dataObj = new Date(yyyy, mm-1, dd, hh, min);
+                await window.db.registrarPonto({
+                    id: window.folhaController.funcSelecionado.id,
+                    nome: window.folhaController.funcSelecionado.nome,
+                    cargo: window.folhaController.funcSelecionado.cargo,
+                    tipo: tipo, foto: null, timestamp: dataObj,
+                    dataStr: window.folhaController.diaSelecionado, horaStr: hora + ":00"
+                });
+                bootstrap.Modal.getInstance(document.getElementById('modalEdicaoPonto')).hide();
+                await window.folhaController.gerarFolha();
+            }
+        };
+
+        // --- ADMIN ---
+        window.adminController = {
+            login: () => { if(document.getElementById('adminPass').value === 'admin123') window.app.navegar('admin'); else alert('Senha errada'); },
+            salvarColaborador: async () => {
+                ui.loading(true);
+                const dados = {
+                    id: document.getElementById('cadId').value,
+                    matricula: document.getElementById('cadMatricula').value,
+                    nome: document.getElementById('cadNome').value,
+                    cargo: document.getElementById('cadCargo').value,
+                    escalaHoras: parseInt(document.getElementById('escalaHoras').value),
+                    escalaDias: []
+                };
+                for(let i=0;i<=6;i++) if(document.getElementById(`dia_${i}`).checked) dados.escalaDias.push(String(i));
+                const f = document.getElementById('cadFoto').files[0];
+                if(f) dados.fotoPerfil = await ui.compressImage(f);
+                const did = document.getElementById('editDocId').value;
+                if(did) await window.db.editarColaborador(did, dados); else await window.db.adicionarColaborador(dados);
+                window.adminController.resetForm(); window.adminController.carregarLista(); ui.loading(false);
+            },
+            resetForm: () => { document.getElementById('formColaborador').reset(); document.getElementById('editDocId').value=""; document.getElementById('btn-cancel-edit').classList.add('hidden'); },
+            carregarLista: async () => {
+                const cols = await window.db.listarColaboradores();
+                const tbody = document.querySelector('#tabela-colaboradores tbody'); tbody.innerHTML = '';
+                const sel = document.getElementById('selectColaboradorQr'); sel.innerHTML = '';
+                cols.forEach(c => {
+                    sel.innerHTML += `<option value="${c.id}">${c.nome}</option>`;
+                    const json = JSON.stringify(c).replace(/"/g, '&quot;');
+                    tbody.innerHTML += `<tr><td>${c.fotoPerfil?'<img src="'+c.fotoPerfil+'" class="profile-thumb-small">':'?'}</td><td>${c.id}</td><td>${c.nome}<br><small>${c.cargo}</small></td><td>${c.escalaHoras}h</td><td><button class="btn btn-sm btn-primary" onclick="window.adminController.editar(${json})">✏️</button> <button class="btn btn-sm btn-danger" onclick="window.adminController.deletar('${c.docId}')">🗑️</button></td></tr>`;
+                });
+            },
+            editar: (d) => {
+                document.getElementById('cadId').value=d.id; document.getElementById('cadMatricula').value=d.matricula;
+                document.getElementById('cadNome').value=d.nome; document.getElementById('cadCargo').value=d.cargo;
+                document.getElementById('escalaHoras').value=d.escalaHoras||8; document.getElementById('editDocId').value=d.docId;
+                for(let i=0;i<=6;i++) document.getElementById(`dia_${i}`).checked = d.escalaDias?d.escalaDias.includes(String(i)):(i>0&&i<6);
+                document.getElementById('btn-cancel-edit').classList.remove('hidden');
+            },
+            deletar: async(id) => { if(confirm("Excluir?")) { await window.db.deletarColaborador(id); window.adminController.carregarLista(); } },
+            gerarCracha: () => {
+                const id = document.getElementById('selectColaboradorQr').value;
+                const c = window.folhaController.cacheFuncionarios.find(f => f.id === id); 
+                if(!c) { window.adminController.carregarLista().then(window.adminController.gerarCracha); return; }
+                document.getElementById('card-nome').innerText = c.nome;
+                document.getElementById('card-cargo').innerText = c.cargo;
+                document.getElementById('card-id').innerText = c.id;
+                document.getElementById('card-matricula').innerText = c.matricula;
+                document.getElementById('card-foto').src = c.fotoPerfil || "";
+                document.getElementById('card-qr').innerHTML = "";
+                new QRCode(document.getElementById('card-qr'), { text: `${c.id},${c.nome}`, width:90, height:90 });
+                document.getElementById('cracha-preview-area').classList.remove('hidden');
+            }
+        };
+
+        window.app = {
+            navegar: (v) => { document.querySelectorAll('.view-section').forEach(e=>e.classList.add('hidden')); document.getElementById('view-'+v).classList.remove('hidden'); if(v==='admin') window.adminController.carregarLista(); },
+            verificarAdmin: () => sessionStorage.getItem('admin_logado') ? window.app.navegar('admin') : window.app.navegar('login'),
+            toggleTestMode: () => { localStorage.setItem('tm', document.getElementById('toggleTestMode').checked); window.location.reload(); },
+            isTestMode: () => localStorage.getItem('tm') === 'true'
+        };
+
+        // Init
+        document.getElementById('toggleTestMode').checked = window.app.isTestMode();
+        if(window.app.isTestMode()) { document.getElementById('test-banner').classList.remove('hidden'); document.body.classList.add('testing-mode'); }
+        setInterval(() => { const d = new Date(); document.getElementById('clock-time').innerText = d.toLocaleTimeString('pt-BR'); document.getElementById('clock-date').innerText = d.toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'}); }, 1000);
+        window.app.navegar('home');
+    </script>
+</body>
+</html>
